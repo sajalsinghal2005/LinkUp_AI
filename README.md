@@ -1,73 +1,115 @@
-# React + TypeScript + Vite
+# 🚀 LinkUp AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An AI-powered career ecosystem that combines job discovery, resume analysis, AI interview preparation, application tracking, and professional networking into one platform.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 Features
 
-## React Compiler
+### 🤖 AI Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* AI Resume ATS Analyzer
+* AI Job Match System
+* AI Voice Interview
+* Resume Builder
+* Skill Detection from Resume
 
-## Expanding the ESLint configuration
+### 💼 Job Platform
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+* Real-time Internship & Job Listings (JSearch API)
+* AI-based Job Matching
+* Saved Jobs
+* Application Tracking
+* User-specific Dashboard
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 🌐 Social Features
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+* LinkedIn-style Community Feed
+* Image Upload Support
+* Like System
+* Global Feed using Firebase
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 📧 Automation
+
+* EmailJS Integration
+* Automated Application Emails
+
+### 🔐 Authentication
+
+* Firebase Authentication
+* Multi-user Support
+* User-specific Applications & Data
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+
+### Backend & Services
+
+* Firebase
+* Firestore Database
+* Cloudinary
+* Gemini AI
+* RapidAPI (JSearch API)
+* EmailJS
+
+---
+
+## 🚀 Live Features
+
+✅ Real internships and jobs
+✅ AI-powered matching
+✅ ATS scoring
+✅ Resume parsing
+✅ Voice AI interview
+✅ Community networking feed
+✅ Real-time dashboard analytics
+
+---
+
+
+
+---
+
+## ⚙️ Installation
+
+```bash
+git clone <your-repo-link>
+
+cd linked_in_project
+
+npm install
+
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+
+---
+
+## 🎯 Problem Solved
+
+Students and freshers currently use multiple platforms for:
+
+* Job searching
+* Resume optimization
+* Interview preparation
+* Networking
+* Application tracking
+
+LinkUp AI combines all these features into one intelligent AI-powered career platform.
+
+---
+
+## 👨‍💻 Developed By
+
+Sajal Singhal
