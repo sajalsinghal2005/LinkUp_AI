@@ -1,0 +1,862 @@
+import Sidebar from "../components/Slidebar";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs, doc, getDoc, query, where } from "firebase/firestore";
+import { auth, db } from "../firebase/firebase";
+import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
+import { GoogleGenAI } from "@google/genai";
+import toast from "react-hot-toast";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+const voiceQuestions = [
+  "Tell me about yourself and your professional background.",
+  "What are the main advantages of React and state management?",
+  "Explain the purpose of the useEffect hook and its dependency array.",
+  "Why do you believe you are the best fit for this developer role?",
+];
+
+function Dashboard() {
+  const navigate = useNavigate();
+  const [applications, setApplications] = useState<any[]>([]);
+  const [savedJobsCount, setSavedJobsCount] = useState(0);
+  const [userData, setUserData] = useState<any>(null);
+
+  // AI Voice Interview states
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [score, setScore] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [listening, setListening] = useState(false);
+
+  const ai = new GoogleGenAI({
+    apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+  });
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return;
+
+      // Fetch Applications
+      try {
+        const querySnapshot = await getDocs(
+          query(collection(db, "applications"), where("userId", "==", uid))
+        );
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setApplications(data);
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+      }
+
+      // Fetch Saved Jobs Count
+      try {
+        const savedSnapshot = await getDocs(
+          query(collection(db, "savedJobs"), where("userId", "==", uid))
+        );
+        setSavedJobsCount(savedSnapshot.docs.length);
+      } catch (error) {
+        console.error("Error fetching saved jobs:", error);
+      }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const fallback = {
+          fullName: user.displayName || user.email?.split("@")[0] || "User",
+          college: user.email || "",
+          email: user.email,
+        };
+        setUserData(fallback);
+
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUserData(docSnap.data());
+          }
+        } catch (error) {
+          console.error("Error loading user data from Firestore:", error);
+        }
+
+        fetchDashboardData();
+      } else {
+        setUserData(null);
+        setApplications([]);
+        setSavedJobsCount(0);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Voice recognition logic
+  const startListening = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Speech Recognition not supported in this browser. Please use Chrome.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    try {
+      recognition.start();
+      setListening(true);
+      setAnswer("");
+      setFeedback("");
+    } catch (e) {
+      console.error(e);
+    }
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setAnswer(transcript);
+      setListening(false);
+
+      toast.loading("Analyzing speech feedback...", { id: "evaluation" });
+      try {
+        const result = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `
+You are an AI interview evaluator.
+
+Question:
+${voiceQuestions[currentQuestion]}
+
+Candidate Answer:
+${transcript}
+
+Give:
+1. Score out of 10
+2. Short constructive feedback
+3. Clear improvement tip
+
+Keep response clear and concise (under 80 words).
+`,
+        });
+        const feedbackText = result.text || "AI feedback generation failed.";
+        setFeedback(feedbackText);
+
+        const detectedScore = feedbackText.match(/\d+\/10/);
+        if (detectedScore) {
+          setScore(parseInt(detectedScore[0]));
+        } else {
+          setScore(7); // Default mock score if regex fails
+        }
+        toast.success("AI Evaluation complete!", { id: "evaluation" });
+      } catch (error) {
+        console.error(error);
+        setFeedback("AI feedback generation encountered an error. Please try again.");
+        toast.error("AI analysis failed", { id: "evaluation" });
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech error", event);
+      setListening(false);
+      toast.error("Speech input timed out or failed.", { id: "evaluation" });
+    };
+  };
+
+  // Re-calculate profile strength dynamically
+  let profileStrength = 20; // base profile setup
+  const atsScore = Number(localStorage.getItem("atsScore")) || 0;
+  const skills = userData?.skills ? userData.skills.split(",") : [];
+
+  const checks = {
+    basicInfo: !!userData?.fullName,
+    skillsAdded: skills.length >= 3,
+    resumeUploaded: atsScore > 0,
+    aiProfileSummary: applications.length > 0,
+    workExperience: !!userData?.experience,
+  };
+
+  if (checks.basicInfo) profileStrength += 20;
+  if (checks.skillsAdded) profileStrength += 20;
+  if (checks.resumeUploaded) profileStrength += 20;
+  if (checks.aiProfileSummary) profileStrength += 20;
+
+  // Group applications dynamically to make a 100% real cumulative line graph
+  const getRealChartData = () => {
+    const now = new Date();
+    const intervals = Array.from({ length: 5 }).map((_, i) => {
+      const date = new Date();
+      date.setDate(now.getDate() - (4 - i) * 7); // 7-day intervals
+      return {
+        label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        timestamp: date.getTime(),
+        count: 0,
+      };
+    });
+
+    applications.forEach((app) => {
+      let appTime = Date.now();
+      if (app.appliedAt) {
+        appTime = app.appliedAt.seconds 
+          ? app.appliedAt.seconds * 1000 
+          : new Date(app.appliedAt).getTime();
+      }
+
+      // Find the interval this app falls into and accumulate subsequent points
+      for (let i = 0; i < intervals.length; i++) {
+        const nextTime = i < intervals.length - 1 ? intervals[i + 1].timestamp : Infinity;
+        if (appTime >= intervals[i].timestamp && appTime < nextTime) {
+          for (let j = i; j < intervals.length; j++) {
+            intervals[j].count += 1;
+          }
+          break;
+        }
+      }
+    });
+
+    return intervals.map(item => ({
+      name: item.label,
+      count: item.count,
+    }));
+  };
+
+  const chartData = getRealChartData();
+
+  // Dynamic status badges for recent applications list
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Interview":
+        return <span className="rounded-full px-3 py-1 text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">Interview</span>;
+      case "Accepted":
+        return <span className="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Accepted</span>;
+      case "Rejected":
+        return <span className="rounded-full px-3 py-1 text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20">Rejected</span>;
+      default:
+        return <span className="rounded-full px-3 py-1 text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pending</span>;
+    }
+  };
+
+  // Modern company badge backgrounds
+  const getCompanyBadge = (company: string) => {
+    const letter = company.charAt(0).toUpperCase();
+    let gradient = "from-[#818CF8] to-[#6366F1]";
+    if (company.toLowerCase().includes("bae")) gradient = "from-red-600 to-red-500";
+    if (company.toLowerCase().includes("mitre")) gradient = "from-blue-600 to-sky-500";
+    if (company.toLowerCase().includes("leidos")) gradient = "from-purple-600 to-indigo-500";
+    if (company.toLowerCase().includes("booz")) gradient = "from-emerald-700 to-green-600";
+    
+    return (
+      <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${gradient} flex items-center justify-center font-bold text-white text-xs shadow-md`}>
+        {letter}
+      </div>
+    );
+  };
+
+  // Recent applications (uses Firestore entries or mock entries if empty)
+  const displayApplications = applications.length > 0 ? applications.slice(0, 4) : [
+    { id: "demo-1", company: "BAE Systems", role: "Frontend Developer Intern", status: "Pending", date: "May 28, 2026" },
+    { id: "demo-2", company: "MITRE", role: "AI/ML Intern", status: "Interview", date: "May 27, 2026" },
+    { id: "demo-3", company: "Leidos", role: "Software Engineering Intern", status: "Pending", date: "May 26, 2026" },
+    { id: "demo-4", company: "Booz Allen Hamilton", role: "Data Science Intern", status: "Accepted", date: "May 24, 2026" },
+  ];
+
+  // SVG Gauge Calculations
+  const radius = 55;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (profileStrength / 100) * circumference;
+
+  return (
+    <div className="flex min-h-screen bg-[#0B0D19] pt-16 lg:pt-0">
+      <Sidebar />
+
+      <div className="flex-1 w-full min-w-0 overflow-x-hidden flex flex-col">
+        <Navbar userData={userData} />
+
+        {/* Dashboard Main Scrollable Area */}
+        <div className="p-4 sm:p-6 lg:p-8 flex-1 space-y-6">
+          
+          {/* Header & Welcome banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-2 tracking-tight">
+                Welcome back, {userData?.fullName?.split(" ")[0] || "Sajal"}! 
+                <span className="animate-[wave_1.5s_infinite] origin-[70%_70%] inline-block">👋</span>
+              </h1>
+              <p className="text-sm text-[#94A3B8] mt-1 font-medium">
+                Here's what's happening with your job search today.
+              </p>
+            </div>
+            <button 
+              onClick={() => navigate("/jobs")}
+              className="px-5 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-sm rounded-xl hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all duration-300 active:scale-95 flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              Find Jobs
+            </button>
+          </div>
+
+          {/* 5 Stats Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            
+            {/* Card 1: Applications */}
+            <div className="p-5 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md relative overflow-hidden group hover:border-[#6366F1]/50 transition-all duration-300">
+              <div className="absolute top-4 right-4 p-2 rounded-xl bg-purple-500/10 text-purple-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+              </div>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Applications</p>
+              <h3 className="text-3xl font-black text-white mt-3">{applications.length}</h3>
+              <p className="text-xs text-purple-400 font-bold mt-2">
+                Total applied jobs
+              </p>
+            </div>
+
+            {/* Card 2: Interviews */}
+            <div className="p-5 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md relative overflow-hidden group hover:border-emerald-500/50 transition-all duration-300">
+              <div className="absolute top-4 right-4 p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Interviews</p>
+              <h3 className="text-3xl font-black text-white mt-3">
+                {applications.filter((a) => a.status === "Interview").length}
+              </h3>
+              <p className="text-xs text-emerald-400 font-bold mt-2">
+                Scheduled interviews
+              </p>
+            </div>
+
+            {/* Card 3: Profile Match */}
+            <div className="p-5 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md relative overflow-hidden group hover:border-amber-500/50 transition-all duration-300">
+              <div className="absolute top-4 right-4 p-2 rounded-xl bg-amber-500/10 text-amber-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.907c.969 0 1.371 1.24.588 1.81l-3.97 2.883a1 1 0 00-.364 1.118l1.52 4.674c.3.922-.755 1.688-1.538 1.118l-3.971-2.883a1 1 0 00-1.175 0l-3.97 2.883c-.783.57-1.838-.197-1.539-1.118l1.518-4.674a1 1 0 00-.364-1.118L2.49 10.1c-.783-.57-.38-1.81.588-1.81h4.906a1 1 0 00.951-.69l1.519-4.674z"></path>
+                </svg>
+              </div>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Profile Match</p>
+              <h3 className="text-3xl font-black text-white mt-3">{profileStrength}%</h3>
+              <p className="text-xs text-amber-400 font-bold mt-2">
+                Profile completeness rate
+              </p>
+            </div>
+
+            {/* Card 4: ATS Score */}
+            <div className="p-5 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md relative overflow-hidden group hover:border-cyan-500/50 transition-all duration-300">
+              <div className="absolute top-4 right-4 p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+              </div>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">ATS Score</p>
+              <h3 className="text-3xl font-black text-white mt-3">{atsScore}%</h3>
+              <p className="text-xs text-cyan-400 font-bold mt-2">
+                ATS score from uploaded resume
+              </p>
+            </div>
+
+            {/* Card 5: Saved Jobs */}
+            <div className="p-5 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md relative overflow-hidden group hover:border-pink-500/50 transition-all duration-300">
+              <div className="absolute top-4 right-4 p-2 rounded-xl bg-pink-500/10 text-pink-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                </svg>
+              </div>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Saved Jobs</p>
+              <h3 className="text-3xl font-black text-white mt-3">{savedJobsCount}</h3>
+              <p className="text-xs text-pink-400 font-bold mt-2">
+                Bookmarked opportunities
+              </p>
+            </div>
+
+          </div>
+
+          {/* Application Analytics & Profile Strength Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            
+            {/* Chart Column */}
+            <div className="lg:col-span-3 p-5 sm:p-6 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md flex flex-col justify-between min-w-0">
+              
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white tracking-tight">Application Analytics</h2>
+                  <p className="text-xs text-[#64748B] mt-0.5">Track your application performance</p>
+                </div>
+                <select className="bg-[#1C1F37] border border-[#2A2F45] text-white text-xs rounded-xl px-3 py-1.5 outline-none font-medium cursor-pointer">
+                  <option>This Month</option>
+                  <option>This Week</option>
+                </select>
+              </div>
+
+              {/* Glowing Purple Area Chart */}
+              <div className="h-[250px] w-full min-h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="purpleGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.35}/>
+                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="name" stroke="#64748B" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#64748B" fontSize={11} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#111322", borderColor: "#2A2F45", borderRadius: "12px" }}
+                      labelStyle={{ color: "#94A3B8", fontWeight: "bold" }}
+                      itemStyle={{ color: "#818CF8" }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#6366F1"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#purpleGlow)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Chart Footnote Metrics */}
+              <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-[#1E2235]/40 text-center sm:text-left">
+                <div>
+                  <span className="text-[10px] text-[#64748B] font-bold uppercase tracking-wider block">Applications Sent</span>
+                  <span className="text-base font-extrabold text-white block mt-1">
+                    {applications.length || 12} <span className="text-[11px] text-emerald-400 font-bold ml-1">+20%</span>
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#64748B] font-bold uppercase tracking-wider block">Interview Calls</span>
+                  <span className="text-base font-extrabold text-white block mt-1">
+                    {applications.filter((a) => a.status === "Interview").length || 3} <span className="text-[11px] text-emerald-400 font-bold ml-1">+50%</span>
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#64748B] font-bold uppercase tracking-wider block">Success Rate</span>
+                  <span className="text-base font-extrabold text-white block mt-1">
+                    {applications.length ? Math.round((applications.filter((a) => a.status === "Accepted" || a.status === "Interview").length / applications.length) * 100) : 25}% 
+                    <span className="text-[11px] text-emerald-400 font-bold ml-1">+10%</span>
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Profile Strength Column */}
+            <div className="lg:col-span-2 p-5 sm:p-6 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md flex flex-col justify-between">
+              
+              <div>
+                <h2 className="text-lg font-bold text-white tracking-tight">Profile Strength</h2>
+                <p className="text-xs text-[#64748B] mt-0.5">Complete tasks to increase matching rates</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-6 my-6 sm:my-0">
+                {/* Circular Gauge SVG */}
+                <div className="relative w-36 h-36 flex-shrink-0">
+                  <svg className="w-36 h-36 transform -rotate-90">
+                    <circle
+                      cx="72"
+                      cy="72"
+                      r={radius}
+                      className="stroke-[#1E2235]"
+                      strokeWidth="9"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx="72"
+                      cy="72"
+                      r={radius}
+                      className="stroke-[#6366F1] transition-all duration-1000 ease-out"
+                      strokeWidth="9"
+                      fill="transparent"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-3xl font-black text-white">{profileStrength}%</span>
+                    <span className="text-[10px] font-bold text-[#818CF8] mt-1 tracking-wider uppercase">
+                      {profileStrength >= 80 ? "Excellent!" : profileStrength >= 50 ? "Good!" : "Beginner!"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Profile checklist checklist */}
+                <div className="flex-1 space-y-2.5 w-full">
+                  
+                  {/* Item 1 */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-white">Basic Information</span>
+                    {checks.basicInfo ? (
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">✓ Completed</span>
+                    ) : (
+                      <span className="text-[#64748B] font-semibold">Missing info</span>
+                    )}
+                  </div>
+
+                  {/* Item 2 */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-white">Skills Added</span>
+                    {checks.skillsAdded ? (
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">✓ Completed</span>
+                    ) : (
+                      <span className="text-amber-400 font-bold">Add 3+ skills</span>
+                    )}
+                  </div>
+
+                  {/* Item 3 */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-white">Resume Uploaded</span>
+                    {checks.resumeUploaded ? (
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">✓ Completed</span>
+                    ) : (
+                      <span className="text-amber-400 font-bold">Upload resume</span>
+                    )}
+                  </div>
+
+                  {/* Item 4 */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-white">AI Profile Summary</span>
+                    {checks.aiProfileSummary ? (
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">✓ Completed</span>
+                    ) : (
+                      <span className="text-[#64748B] font-semibold flex items-center gap-1">Not Active</span>
+                    )}
+                  </div>
+
+                  {/* Item 5 */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-white">Work Experience</span>
+                    {checks.workExperience ? (
+                      <span className="text-emerald-400 font-bold">✓ Completed</span>
+                    ) : (
+                      <span className="text-purple-400 font-bold cursor-pointer hover:underline" onClick={() => navigate("/resume")}>Add experience</span>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigate("/resume")}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] hover:shadow-[0_0_20px_rgba(99,102,241,0.35)] font-bold text-white text-xs transition-all duration-300 active:scale-[0.98] cursor-pointer"
+              >
+                Improve Profile
+              </button>
+
+            </div>
+
+          </div>
+
+          {/* Recent Applications Card */}
+          <div className="p-5 sm:p-6 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md">
+            
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-white tracking-tight">Recent Applications</h2>
+                <p className="text-xs text-[#64748B] mt-0.5">Quickly view status of your recent applications</p>
+              </div>
+              <button 
+                onClick={() => navigate("/applications")}
+                className="rounded-xl bg-[#1C1F37] border border-[#2A2F45] px-4 py-2 text-xs font-bold text-white hover:bg-[#252A4A] transition-all cursor-pointer"
+              >
+                View All
+              </button>
+            </div>
+
+            {/* Applications Table Layout */}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[500px] text-left text-white border-collapse">
+                <thead>
+                  <tr className="border-b border-[#1E2235] text-[#64748B] text-[10px] font-bold uppercase tracking-wider">
+                    <th className="pb-3 text-left">Job Title</th>
+                    <th className="pb-3 text-left">Company</th>
+                    <th className="pb-3 text-left">Status</th>
+                    <th className="pb-3 text-left">Applied Date</th>
+                    <th className="pb-3 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1E2235]/40 text-xs">
+                  {displayApplications.map((app: any) => (
+                    <tr 
+                      key={app.id}
+                      onClick={() => navigate("/applications")}
+                      className="group cursor-pointer hover:bg-[#1C1F37]/35 transition-colors"
+                    >
+                      <td className="py-4 font-bold text-white group-hover:text-[#818CF8] transition-colors">
+                        {app.role || "Developer Intern"}
+                      </td>
+                      
+                      <td className="py-4">
+                        <div className="flex items-center gap-2.5">
+                          {getCompanyBadge(app.company)}
+                          <span className="font-semibold text-[#D1D5DB]">{app.company}</span>
+                        </div>
+                      </td>
+
+                      <td className="py-4">
+                        {getStatusBadge(app.status)}
+                      </td>
+
+                      <td className="py-4 text-[#94A3B8] font-medium">
+                        {app.date || "May 25, 2026"}
+                      </td>
+
+                      <td className="py-4 text-right">
+                        <svg className="w-4 h-4 text-[#64748B] group-hover:text-white transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          {/* AI Voice Interview Side-by-Side Panel */}
+          <div className="p-5 sm:p-6 lg:p-8 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md relative overflow-hidden group">
+            {/* Background glowing rings */}
+            <div className="absolute right-0 bottom-0 w-[400px] h-[400px] bg-gradient-to-tr from-[#6366F1]/5 to-transparent rounded-full -mr-40 -mb-40 blur-3xl pointer-events-none"></div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              
+              {/* Left Column: Information, controls, evaluation feedback */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-xl font-bold text-white tracking-tight">AI Voice Interview</h2>
+                  <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-lg bg-[#6366F1]/20 text-[#818CF8] border border-[#6366F1]/30">Beta</span>
+                </div>
+                
+                <p className="text-xs text-[#94A3B8] font-medium max-w-lg leading-relaxed">
+                  Practice real-time interactive interview questions evaluated instantaneously using Gemini Intelligence. Elevate your confidence, communication pace, and domain knowledge.
+                </p>
+
+                {/* Feature highlights bullets */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0D19]/60 border border-[#1E2235]/60 text-xs">
+                    <span className="text-[#818CF8]">🎙</span>
+                    <div className="font-semibold text-white">Speak Naturally</div>
+                  </div>
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0D19]/60 border border-[#1E2235]/60 text-xs">
+                    <span className="text-[#818CF8]">🎯</span>
+                    <div className="font-semibold text-white">Instant Score</div>
+                  </div>
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0D19]/60 border border-[#1E2235]/60 text-xs">
+                    <span className="text-[#818CF8]">📊</span>
+                    <div className="font-semibold text-white">Detailed Tips</div>
+                  </div>
+                </div>
+
+                {/* Active Question Display */}
+                <div className="p-4 rounded-xl border border-[#2A2F45] bg-[#0B0D19]/80 space-y-2">
+                  <span className="text-[10px] text-[#818CF8] font-bold uppercase tracking-wider">Question {currentQuestion + 1} of {voiceQuestions.length}</span>
+                  <p className="text-xs text-[#E2E8F0] font-bold leading-relaxed">{voiceQuestions[currentQuestion]}</p>
+                </div>
+
+                {/* Answer speech-to-text text bubble if listening or populated */}
+                {(answer || listening) && (
+                  <div className="p-3 rounded-xl bg-[#111322] border border-[#1E2235]/80 space-y-1">
+                    <span className="text-[9px] text-[#64748B] font-bold uppercase">Transcribed Answer:</span>
+                    <p className="text-xs text-[#D1D5DB] leading-relaxed italic">
+                      {listening && !answer ? "Listening... start speaking clearly into your microphone." : answer}
+                    </p>
+                  </div>
+                )}
+
+                {/* Actions Row */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={startListening}
+                    disabled={listening}
+                    className={`py-2.5 px-5 rounded-xl font-bold text-xs transition-all duration-300 active:scale-95 cursor-pointer flex items-center gap-2 ${
+                      listening
+                        ? "bg-[#D946EF] text-white shadow-[0_0_15px_rgba(217,70,239,0.4)]"
+                        : "bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                    }`}
+                  >
+                    {listening ? (
+                      <>
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+                        Listening...
+                      </>
+                    ) : (
+                      <>
+                        <span>🎙</span>
+                        Start Voice Interview
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setCurrentQuestion((prev) => (prev + 1) % voiceQuestions.length);
+                      setFeedback("");
+                      setAnswer("");
+                      setScore(0);
+                    }}
+                    className="py-2.5 px-4 rounded-xl border border-[#2A2F45] text-xs font-bold text-[#818CF8] hover:bg-[#1E2235]/40 hover:text-white transition-all duration-300 cursor-pointer"
+                  >
+                    Next Question
+                  </button>
+                </div>
+
+                {/* AI feedback panel display */}
+                {feedback && (
+                  <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-2 mt-4 transition-all duration-300">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-[#D946EF] flex items-center gap-1.5">
+                        <span>✨</span> Evaluator Report
+                      </h4>
+                      <span className="px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-[#D946EF]/10 text-[#D946EF] border border-[#D946EF]/20">
+                        Score: {score}/10
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#E2E8F0] leading-relaxed whitespace-pre-line font-medium">
+                      {feedback}
+                    </p>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Right Column: Beautiful animated visualizer and pulsating mic circle */}
+              <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-[#1E2235]/60 bg-[#0B0D19]/45 backdrop-blur-md relative h-[280px]">
+                
+                {/* Glow underlay */}
+                <div className="absolute w-32 h-32 rounded-full bg-[#6366F1]/10 blur-2xl animate-pulse"></div>
+
+                {/* Waveform visualizer representation */}
+                <div className="w-full flex items-center justify-center gap-1.5 h-16 mb-8">
+                  {[...Array(15)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-1 rounded-full bg-gradient-to-t from-[#6366F1] to-[#D946EF] transition-all duration-300 ${
+                        listening ? "animate-[bounce_0.8s_infinite_alternate]" : "opacity-45"
+                      }`}
+                      style={{
+                        animationDelay: `${i * 0.05}s`,
+                        height: listening ? "100%" : `${15 + (i % 5) * 8}px`,
+                        maxHeight: "56px"
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Pulsating Microphone container */}
+                <div 
+                  onClick={startListening}
+                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer ${
+                    listening
+                      ? "bg-gradient-to-tr from-[#D946EF] to-purple-500 shadow-[0_0_35px_rgba(217,70,239,0.5)] scale-110"
+                      : "bg-[#1E2235] hover:bg-[#6366F1] hover:shadow-[0_0_25px_rgba(99,102,241,0.35)] scale-100"
+                  }`}
+                >
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                  </svg>
+                </div>
+
+                <span className="text-[10px] text-[#64748B] font-bold uppercase tracking-widest mt-5 tracking-wider">
+                  {listening ? "Actively Listening" : "~ 15–20 minutes session"}
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* Global Premium Footer */}
+        <footer className="border-t border-[#1E2235]/60 bg-[#0B0D19] p-8 text-xs text-[#64748B] mt-auto">
+          <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8">
+            
+            <div className="col-span-2 space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#6366F1] to-[#818CF8] flex items-center justify-center font-bold text-white text-sm shadow-md">
+                  L
+                </div>
+                <span className="text-base font-extrabold text-white tracking-tight">Linkup AI</span>
+              </div>
+              <p className="leading-relaxed max-w-sm">
+                Empowering job seekers with state of the art artificial intelligence matching, live speech analysis, and real-time application trackers.
+              </p>
+            </div>
+
+            <div>
+              <h5 className="font-extrabold text-white uppercase tracking-wider mb-3">Platform</h5>
+              <ul className="space-y-2">
+                <li><a href="#" className="hover:text-white transition-colors" onClick={() => navigate("/jobs")}>Find Jobs</a></li>
+                <li><a href="#" className="hover:text-white transition-colors" onClick={() => navigate("/dashboard")}>Dashboard</a></li>
+                <li><a href="#" className="hover:text-white transition-colors" onClick={() => navigate("/applications")}>Applications</a></li>
+                <li><a href="#" className="hover:text-white transition-colors" onClick={() => navigate("/saved-jobs")}>Saved Jobs</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h5 className="font-extrabold text-white uppercase tracking-wider mb-3">Tools</h5>
+              <ul className="space-y-2">
+                <li><a href="#" className="hover:text-white transition-colors" onClick={() => navigate("/resume-builder")}>AI Resume Builder</a></li>
+                <li><a href="#" className="hover:text-white transition-colors" onClick={() => navigate("/resume")}>ATS Analyzer</a></li>
+                <li><a href="#" className="hover:text-white transition-colors" onClick={() => navigate("/dashboard")}>Voice Interview</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h5 className="font-extrabold text-white uppercase tracking-wider mb-3">Company</h5>
+              <ul className="space-y-2">
+                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
+
+          </div>
+
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between border-t border-[#1E2235]/40 mt-8 pt-6 gap-4">
+            <span>© 2026 Linkup AI. All rights reserved.</span>
+            <div className="flex items-center gap-4 text-slate-400">
+              <a href="#" className="hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                </svg>
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </footer>
+
+      </div>
+    </div>
+  );
+}
+
+export default Dashboard;
