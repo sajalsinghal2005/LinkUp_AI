@@ -5,8 +5,6 @@ import { collection, getDocs, doc, getDoc, query, where } from "firebase/firesto
 import { auth, db } from "../firebase/firebase";
 import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
-import { GoogleGenAI } from "@google/genai";
-import toast from "react-hot-toast";
 import {
   AreaChart,
   Area,
@@ -16,29 +14,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const voiceQuestions = [
-  "Tell me about yourself and your professional background.",
-  "What are the main advantages of React and state management?",
-  "Explain the purpose of the useEffect hook and its dependency array.",
-  "Why do you believe you are the best fit for this developer role?",
-];
-
 function Dashboard() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState<any[]>([]);
   const [savedJobsCount, setSavedJobsCount] = useState(0);
   const [userData, setUserData] = useState<any>(null);
-
-  // AI Voice Interview states
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [feedback, setFeedback] = useState("");
-  const [score, setScore] = useState(0);
-  const [answer, setAnswer] = useState("");
-  const [listening, setListening] = useState(false);
-
-  const ai = new GoogleGenAI({
-    apiKey: import.meta.env.VITE_GEMINI_API_KEY,
-  });
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -100,79 +80,6 @@ function Dashboard() {
     return () => unsubscribe();
   }, []);
 
-  // Voice recognition logic
-  const startListening = () => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert("Speech Recognition not supported in this browser. Please use Chrome.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    try {
-      recognition.start();
-      setListening(true);
-      setAnswer("");
-      setFeedback("");
-    } catch (e) {
-      console.error(e);
-    }
-
-    recognition.onresult = async (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setAnswer(transcript);
-      setListening(false);
-
-      toast.loading("Analyzing speech feedback...", { id: "evaluation" });
-      try {
-        const result = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: `
-You are an AI interview evaluator.
-
-Question:
-${voiceQuestions[currentQuestion]}
-
-Candidate Answer:
-${transcript}
-
-Give:
-1. Score out of 10
-2. Short constructive feedback
-3. Clear improvement tip
-
-Keep response clear and concise (under 80 words).
-`,
-        });
-        const feedbackText = result.text || "AI feedback generation failed.";
-        setFeedback(feedbackText);
-
-        const detectedScore = feedbackText.match(/\d+\/10/);
-        if (detectedScore) {
-          setScore(parseInt(detectedScore[0]));
-        } else {
-          setScore(7); // Default mock score if regex fails
-        }
-        toast.success("AI Evaluation complete!", { id: "evaluation" });
-      } catch (error) {
-        console.error(error);
-        setFeedback("AI feedback generation encountered an error. Please try again.");
-        toast.error("AI analysis failed", { id: "evaluation" });
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error("Speech error", event);
-      setListening(false);
-      toast.error("Speech input timed out or failed.", { id: "evaluation" });
-    };
-  };
 
   // Re-calculate profile strength dynamically
   let profileStrength = 20; // base profile setup
@@ -629,160 +536,7 @@ Keep response clear and concise (under 80 words).
               </table>
             </div>
 
-          </div>
-
-          {/* AI Voice Interview Side-by-Side Panel */}
-          <div className="p-5 sm:p-6 lg:p-8 rounded-2xl border border-[#1E2235] bg-[#111322]/80 backdrop-blur-md relative overflow-hidden group">
-            {/* Background glowing rings */}
-            <div className="absolute right-0 bottom-0 w-[400px] h-[400px] bg-gradient-to-tr from-[#6366F1]/5 to-transparent rounded-full -mr-40 -mb-40 blur-3xl pointer-events-none"></div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              
-              {/* Left Column: Information, controls, evaluation feedback */}
-              <div className="space-y-5">
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-xl font-bold text-white tracking-tight">AI Voice Interview</h2>
-                  <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-lg bg-[#6366F1]/20 text-[#818CF8] border border-[#6366F1]/30">Beta</span>
-                </div>
-                
-                <p className="text-xs text-[#94A3B8] font-medium max-w-lg leading-relaxed">
-                  Practice real-time interactive interview questions evaluated instantaneously using Gemini Intelligence. Elevate your confidence, communication pace, and domain knowledge.
-                </p>
-
-                {/* Feature highlights bullets */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0D19]/60 border border-[#1E2235]/60 text-xs">
-                    <span className="text-[#818CF8]">🎙</span>
-                    <div className="font-semibold text-white">Speak Naturally</div>
-                  </div>
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0D19]/60 border border-[#1E2235]/60 text-xs">
-                    <span className="text-[#818CF8]">🎯</span>
-                    <div className="font-semibold text-white">Instant Score</div>
-                  </div>
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0D19]/60 border border-[#1E2235]/60 text-xs">
-                    <span className="text-[#818CF8]">📊</span>
-                    <div className="font-semibold text-white">Detailed Tips</div>
-                  </div>
-                </div>
-
-                {/* Active Question Display */}
-                <div className="p-4 rounded-xl border border-[#2A2F45] bg-[#0B0D19]/80 space-y-2">
-                  <span className="text-[10px] text-[#818CF8] font-bold uppercase tracking-wider">Question {currentQuestion + 1} of {voiceQuestions.length}</span>
-                  <p className="text-xs text-[#E2E8F0] font-bold leading-relaxed">{voiceQuestions[currentQuestion]}</p>
-                </div>
-
-                {/* Answer speech-to-text text bubble if listening or populated */}
-                {(answer || listening) && (
-                  <div className="p-3 rounded-xl bg-[#111322] border border-[#1E2235]/80 space-y-1">
-                    <span className="text-[9px] text-[#64748B] font-bold uppercase">Transcribed Answer:</span>
-                    <p className="text-xs text-[#D1D5DB] leading-relaxed italic">
-                      {listening && !answer ? "Listening... start speaking clearly into your microphone." : answer}
-                    </p>
-                  </div>
-                )}
-
-                {/* Actions Row */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={startListening}
-                    disabled={listening}
-                    className={`py-2.5 px-5 rounded-xl font-bold text-xs transition-all duration-300 active:scale-95 cursor-pointer flex items-center gap-2 ${
-                      listening
-                        ? "bg-[#D946EF] text-white shadow-[0_0_15px_rgba(217,70,239,0.4)]"
-                        : "bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]"
-                    }`}
-                  >
-                    {listening ? (
-                      <>
-                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
-                        Listening...
-                      </>
-                    ) : (
-                      <>
-                        <span>🎙</span>
-                        Start Voice Interview
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setCurrentQuestion((prev) => (prev + 1) % voiceQuestions.length);
-                      setFeedback("");
-                      setAnswer("");
-                      setScore(0);
-                    }}
-                    className="py-2.5 px-4 rounded-xl border border-[#2A2F45] text-xs font-bold text-[#818CF8] hover:bg-[#1E2235]/40 hover:text-white transition-all duration-300 cursor-pointer"
-                  >
-                    Next Question
-                  </button>
-                </div>
-
-                {/* AI feedback panel display */}
-                {feedback && (
-                  <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-2 mt-4 transition-all duration-300">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-[#D946EF] flex items-center gap-1.5">
-                        <span>✨</span> Evaluator Report
-                      </h4>
-                      <span className="px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-[#D946EF]/10 text-[#D946EF] border border-[#D946EF]/20">
-                        Score: {score}/10
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#E2E8F0] leading-relaxed whitespace-pre-line font-medium">
-                      {feedback}
-                    </p>
-                  </div>
-                )}
-
-              </div>
-
-              {/* Right Column: Beautiful animated visualizer and pulsating mic circle */}
-              <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-[#1E2235]/60 bg-[#0B0D19]/45 backdrop-blur-md relative h-[280px]">
-                
-                {/* Glow underlay */}
-                <div className="absolute w-32 h-32 rounded-full bg-[#6366F1]/10 blur-2xl animate-pulse"></div>
-
-                {/* Waveform visualizer representation */}
-                <div className="w-full flex items-center justify-center gap-1.5 h-16 mb-8">
-                  {[...Array(15)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`w-1 rounded-full bg-gradient-to-t from-[#6366F1] to-[#D946EF] transition-all duration-300 ${
-                        listening ? "animate-[bounce_0.8s_infinite_alternate]" : "opacity-45"
-                      }`}
-                      style={{
-                        animationDelay: `${i * 0.05}s`,
-                        height: listening ? "100%" : `${15 + (i % 5) * 8}px`,
-                        maxHeight: "56px"
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Pulsating Microphone container */}
-                <div 
-                  onClick={startListening}
-                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer ${
-                    listening
-                      ? "bg-gradient-to-tr from-[#D946EF] to-purple-500 shadow-[0_0_35px_rgba(217,70,239,0.5)] scale-110"
-                      : "bg-[#1E2235] hover:bg-[#6366F1] hover:shadow-[0_0_25px_rgba(99,102,241,0.35)] scale-100"
-                  }`}
-                >
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
-                  </svg>
-                </div>
-
-                <span className="text-[10px] text-[#64748B] font-bold uppercase tracking-widest mt-5 tracking-wider">
-                  {listening ? "Actively Listening" : "~ 15–20 minutes session"}
-                </span>
-
-              </div>
-
-            </div>
-
-          </div>
+         </div>
 
         </div>
 
