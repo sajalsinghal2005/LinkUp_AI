@@ -4,9 +4,12 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  query,
+  where,
 } from "firebase/firestore";
 
-import { db } from "../firebase/firebase";
+import { db, auth } from "../firebase/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 import { useEffect, useState } from "react";
 
@@ -25,15 +28,21 @@ function Applications() {
   const [filter, setFilter] = useState("All");
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchApplications(user.uid);
+      } else {
+        setApplications([]);
+      }
+    });
 
-    fetchApplications();
-
+    return () => unsubscribe();
   }, []);
 
-  const fetchApplications = async () => {
+  const fetchApplications = async (uid: string) => {
 
     const querySnapshot = await getDocs(
-      collection(db, "applications")
+      query(collection(db, "applications"), where("userId", "==", uid))
     );
 
     const applicationsData = querySnapshot.docs.map((doc) => ({

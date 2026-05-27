@@ -86,6 +86,7 @@ function Sidebar() {
       {navItems.map((item) => {
         const active = isItemActive(item.path);
         return (
+          
           <div
             key={item.path}
             onClick={() => {

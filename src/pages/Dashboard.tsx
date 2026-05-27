@@ -169,14 +169,7 @@ function Dashboard() {
       </div>
     );
   };
-
-  // Recent applications (uses Firestore entries or mock entries if empty)
-  const displayApplications = applications.length > 0 ? applications.slice(0, 4) : [
-    { id: "demo-1", company: "BAE Systems", role: "Frontend Developer Intern", status: "Pending", date: "May 28, 2026" },
-    { id: "demo-2", company: "MITRE", role: "AI/ML Intern", status: "Interview", date: "May 27, 2026" },
-    { id: "demo-3", company: "Leidos", role: "Software Engineering Intern", status: "Pending", date: "May 26, 2026" },
-    { id: "demo-4", company: "Booz Allen Hamilton", role: "Data Science Intern", status: "Accepted", date: "May 24, 2026" },
-  ];
+  const displayApplications = applications.slice(0, 4);
 
   // SVG Gauge Calculations
   const radius = 55;
@@ -500,38 +493,46 @@ function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1E2235]/40 text-xs">
-                  {displayApplications.map((app: any) => (
-                    <tr 
-                      key={app.id}
-                      onClick={() => navigate("/applications")}
-                      className="group cursor-pointer hover:bg-[#1C1F37]/35 transition-colors"
-                    >
-                      <td className="py-4 font-bold text-white group-hover:text-[#818CF8] transition-colors">
-                        {app.role || "Developer Intern"}
-                      </td>
-                      
-                      <td className="py-4">
-                        <div className="flex items-center gap-2.5">
-                          {getCompanyBadge(app.company)}
-                          <span className="font-semibold text-[#D1D5DB]">{app.company}</span>
-                        </div>
-                      </td>
-
-                      <td className="py-4">
-                        {getStatusBadge(app.status)}
-                      </td>
-
-                      <td className="py-4 text-[#94A3B8] font-medium">
-                        {app.date || "May 25, 2026"}
-                      </td>
-
-                      <td className="py-4 text-right">
-                        <svg className="w-4 h-4 text-[#64748B] group-hover:text-white transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path>
-                        </svg>
+                  {displayApplications.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-500 font-medium">
+                        No recent applications found. <span className="text-[#6366F1] cursor-pointer hover:underline" onClick={() => navigate("/jobs")}>Find and apply to jobs</span> to get started!
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    displayApplications.map((app: any) => (
+                      <tr 
+                        key={app.id}
+                        onClick={() => navigate("/applications")}
+                        className="group cursor-pointer hover:bg-[#1C1F37]/35 transition-colors"
+                      >
+                        <td className="py-4 font-bold text-white group-hover:text-[#818CF8] transition-colors">
+                          {app.role || "Developer Intern"}
+                        </td>
+                        
+                        <td className="py-4">
+                          <div className="flex items-center gap-2.5">
+                            {getCompanyBadge(app.company)}
+                            <span className="font-semibold text-[#D1D5DB]">{app.company}</span>
+                          </div>
+                        </td>
+
+                        <td className="py-4">
+                          {getStatusBadge(app.status)}
+                        </td>
+
+                        <td className="py-4 text-[#94A3B8] font-medium">
+                          {app.date || "May 25, 2026"}
+                        </td>
+
+                        <td className="py-4 text-right">
+                          <svg className="w-4 h-4 text-[#64748B] group-hover:text-white transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path>
+                          </svg>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

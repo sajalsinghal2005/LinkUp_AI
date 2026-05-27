@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  signOut,
 } from "firebase/auth";
 
 import {
@@ -90,17 +91,16 @@ await setDoc(
 }
 );
 
-       toast.success(
-    "Account Created 🚀"
-  );
+        await signOut(auth);
 
-  setIsRegister(false);
+        toast.success(
+          "Account Created 🚀. Please login to continue."
+        );
 
-  setEmail("");
-
-  setPassword("");
-
-  return ;
+        setIsRegister(false);
+        setEmail("");
+        setPassword("");
+        return;
 
 } else {
 
