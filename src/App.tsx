@@ -22,6 +22,7 @@ import ResumeBuilder from "./pages/ResumeBuilder";
 import Feed from "./pages/Feed";
 
 import AiChatbot from "./components/AiChatbot";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
 
@@ -67,51 +68,80 @@ function App() {
               />
             }
           />
-<Route
-  path="/feed"
-  element={<Feed />}
-/>
           <Route
             path="/login"
             element={<Login />}
           />
 
           <Route
+            path="/feed"
+            element={
+              <ProtectedRoute>
+                <Feed />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/dashboard"
-            element={<Dashboard />}
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/jobs"
-            element={<Jobs />}
+            element={
+              <ProtectedRoute>
+                <Jobs />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/applications"
             element={
-              <Applications />
+              <ProtectedRoute>
+                <Applications />
+              </ProtectedRoute>
             }
           />
 
           <Route
             path="/settings"
-            element={<Settings />}
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/saved-jobs"
-            element={<SavedJobs />}
+            element={
+              <ProtectedRoute>
+                <SavedJobs />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/admin"
-            element={<Admin />}
+            element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/resume-builder"
             element={
-              <ResumeBuilder />
+              <ProtectedRoute>
+                <ResumeBuilder />
+              </ProtectedRoute>
             }
           />
 
@@ -121,13 +151,15 @@ function App() {
 
             element={
 
-              <Resume
+              <ProtectedRoute>
+                <Resume
 
-                setResumeText={
-                  setResumeText
-                }
+                  setResumeText={
+                    setResumeText
+                  }
 
-              />
+                />
+              </ProtectedRoute>
 
             }
 
