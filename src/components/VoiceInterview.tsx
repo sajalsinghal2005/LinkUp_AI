@@ -1,23 +1,42 @@
 import { useState } from "react";
 import { GoogleGenAI }
 from "@google/genai";
-const questions = [
+interface VoiceInterviewProps {
+  job?: {
+    job_title: string;
+  };
+}
 
-  "Tell me about yourself",
+function VoiceInterview({ job }: VoiceInterviewProps) {
+  const role = job?.job_title?.toLowerCase() || "";
 
-  "What is React?",
+  let questions = [
+    "Tell me about yourself",
+    "What are your strengths?",
+    "Why should we hire you?",
+  ];
 
-  "Explain useEffect hook",
+  if (role.includes("frontend")) {
+    questions = [
+      "What is React?",
+      "What is Virtual DOM?",
+      "Explain hooks in React.",
+    ];
+  } else if (role.includes("backend")) {
+    questions = [
+      "What is Node.js?",
+      "Explain REST APIs.",
+      "What is Express.js?",
+    ];
+  } else if (role.includes("ai") || role.includes("machine learning")) {
+    questions = [
+      "What is Machine Learning?",
+      "What is overfitting?",
+      "Explain supervised learning.",
+    ];
+  }
 
-  "Why should we hire you?",
-
-];
-
-function VoiceInterview() {
-
-  const [currentQuestion,
-  setCurrentQuestion] =
-  useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
 
   const [feedback,
 setFeedback] =
