@@ -4,6 +4,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker?url";
 import { doc, setDoc } from "firebase/firestore";
 import Sidebar from "../components/Slidebar";
+import { toast } from "react-hot-toast";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -19,6 +20,16 @@ function Resume({ setResumeText }: any) {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Please upload a PDF file only.");
+      return;
+    }
+
+    setResume("");
+    setScore(0);
+    setSkills([]);
+    setTips([]);
+    setRole("");
     setLoading(true);
 
     try {
@@ -28,7 +39,7 @@ function Resume({ setResumeText }: any) {
       data.append("cloud_name", "daeazxq2r");
 
       const response = await fetch(
-        "https://api.cloudinary.com/v1_1/daeazxq2r/image/upload",
+        "https://api.cloudinary.com/v1_1/daeazxq2r/raw/upload",
         {
           method: "POST",
           body: data,
@@ -52,6 +63,22 @@ function Resume({ setResumeText }: any) {
       }
 
       const text = extractedText.toLowerCase();
+
+      // Validate if the uploaded file is actually a resume
+      const hasEducation = text.includes("education") || text.includes("academic") || text.includes("college") || text.includes("university") || text.includes("school");
+      const hasExperience = text.includes("experience") || text.includes("work") || text.includes("employment") || text.includes("intern") || text.includes("job") || text.includes("projects");
+      const hasSkills = text.includes("skills") || text.includes("technologies") || text.includes("tools") || text.includes("expertise") || text.includes("programming");
+      const hasContact = text.includes("@") || text.includes("phone") || text.includes("contact") || text.includes("email") || text.includes("mobile") || text.includes("linkedin");
+
+      const isProbablyResume = (hasEducation || hasExperience) && (hasSkills || hasContact);
+
+      if (!isProbablyResume) {
+        toast.error("The uploaded document does not appear to be a professional resume. Please upload a valid resume containing standard sections.");
+        setResume("");
+        setLoading(false);
+        return;
+      }
+
       setResumeText(text);
       localStorage.setItem("resumeText", text);
 
@@ -104,6 +131,7 @@ function Resume({ setResumeText }: any) {
       });
     } catch (err) {
       console.error("Resume processing error:", err);
+      toast.error("Failed to parse the PDF resume. Please try again with a valid PDF.");
     } finally {
       setLoading(false);
     }
@@ -126,8 +154,8 @@ function Resume({ setResumeText }: any) {
           <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-cyan-500/30 p-8 text-center transition-all duration-300 hover:border-cyan-400 sm:p-16">
             <div className="text-5xl sm:text-6xl">📄</div>
             <h2 className="mt-5 text-xl font-bold sm:text-3xl">Upload Resume</h2>
-            <p className="mt-2 text-sm text-slate-400 sm:text-base">PDF, DOC, DOCX</p>
-            <input type="file" className="hidden" onChange={uploadResume} />
+            <p className="mt-2 text-sm text-slate-400 sm:text-base">PDF only</p>
+            <input type="file" accept=".pdf" className="hidden" onChange={uploadResume} />
           </label>
 
           {loading && (
@@ -187,19 +215,7 @@ function Resume({ setResumeText }: any) {
             </div>
           )}
 
-          {resume && (
-            <div className="mt-8 rounded-2xl bg-black/30 p-6 text-center sm:text-left">
-              <h2 className="text-xl font-bold text-cyan-400 sm:text-2xl">Resume Uploaded Successfully</h2>
-              <div className="mt-4 flex flex-wrap gap-4 justify-center sm:justify-start">
-                <a href={`https://docs.google.com/gview?url=${encodeURIComponent(resume)}&embedded=false`} target="_blank" rel="noreferrer" className="inline-block rounded-2xl bg-cyan-400 px-6 py-3 font-semibold text-black hover:bg-cyan-300 transition-colors">
-                  View Resume
-                </a>
-                <a href={resume} download className="inline-block rounded-2xl border border-cyan-400 px-6 py-3 font-semibold text-cyan-400 hover:bg-cyan-400/10 transition-colors">
-                  Download Resume
-                </a>
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
     </div>
