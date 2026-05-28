@@ -141,25 +141,6 @@ function Navbar({ userData, search, onSearchChange }: Props) {
 
         {/* Right Actions */}
         <div className="flex items-center gap-6">
-          {/* Notification Bell */}
-          <button className="relative rounded-xl border border-[#2A2F45] bg-[#111322]/40 p-2.5 text-slate-300 transition-all duration-200 hover:border-[#1E2235] hover:text-white active:scale-95">
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#6366F1] animate-pulse"></span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="h-6 w-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-              />
-            </svg>
-          </button>
-
           {/* Profile Section */}
           <div className="relative">
             <div

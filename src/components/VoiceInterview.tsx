@@ -34,6 +34,24 @@ function VoiceInterview({ job }: VoiceInterviewProps) {
       "What is overfitting?",
       "Explain supervised learning.",
     ];
+  } else if (
+    role.includes("software") ||
+    role.includes("developer") ||
+    role.includes("development") ||
+    role.includes("engineer") ||
+    role.includes("full stack") ||
+    role.includes("fullstack") ||
+    role.includes("programmer") ||
+    role.includes("coding") ||
+    role.includes("intern")
+  ) {
+    questions = [
+      "Explain the difference between a compiler and an interpreter.",
+      "What is Git and why is version control important?",
+      "Explain the concept of OOP (Object-Oriented Programming).",
+      "What is a RESTful API and how does it work?",
+      "Describe a challenging software bug you solved recently.",
+    ];
   }
 
   const [currentQuestion, setCurrentQuestion] = useState(0);

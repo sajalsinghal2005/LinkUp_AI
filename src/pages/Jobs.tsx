@@ -6,13 +6,19 @@ import Sidebar from "../components/Slidebar";
 import Navbar from "../components/Navbar";
 import emailjs from "emailjs-com";
 import axios from "axios";
+import { GoogleGenAI } from "@google/genai";
+
 function Jobs() {
+  const ai = new GoogleGenAI({
+    apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+  });
 
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<any[]>([]);
   const [successMessage, setSuccessMessage] = useState("");
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
   const fetchRealJobs = async () => {
     try {
       const response = await axios.get(
@@ -51,72 +57,101 @@ function Jobs() {
   );
 
   // Interview AI
-  const generateQuestions =
-    (role: string) => {
+  const generateQuestions = async (role: string, company: string = "Company", description: string = "") => {
+    setSelectedRole(role);
+    setLoadingQuestions(true);
+    setQuestions([]);
 
-      setSelectedRole(role);
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: `You are an expert technical interviewer. Generate exactly 5 relevant, highly-tailored interview questions for a candidate applying to the following job:
+Role: ${role}
+Company: ${company}
+Description snippet: ${description ? description.slice(0, 500) : "N/A"}
 
-      if (role.includes("React")) {
+CRITICAL REQUIREMENT: Make each question very short, sweet, direct, and concise (strictly maximum 1 to 2 lines). Avoid long intro/background sentences or conversational filler.
 
-        setQuestions([
+Provide the output as a simple numbered list, one question per line, starting with 1. to 5., with no extra conversational text or headers.`,
+      });
 
-          "What is React?",
-          "Explain useEffect hook.",
-          "Difference between state and props?",
-          "What is Virtual DOM?",
-          "Explain React lifecycle.",
+      const text = response.text || "";
+      const lines = text
+        .split("\n")
+        .map(line => line.replace(/^\d+\.\s*/, "").replace(/^-\s*/, "").trim())
+        .filter(line => line.length > 0)
+        .slice(0, 5);
 
-        ]);
-
+      if (lines.length >= 3) {
+        setQuestions(lines);
+        setLoadingQuestions(false);
+        return;
       }
+    } catch (error) {
+      console.error("Error generating dynamic questions:", error);
+    }
 
-      else if (
-        role.includes("Backend")
-      ) {
+    // FALLBACK
+    const normalizedRole = role.toLowerCase();
+    let fallbackQuestions = [
+      "Tell me about yourself.",
+      "Why should we hire you?",
+      "What are your strengths?",
+      "Where do you see yourself in 5 years?",
+      "Explain a challenging project.",
+    ];
 
-        setQuestions([
+    if (normalizedRole.includes("react") || normalizedRole.includes("frontend")) {
+      fallbackQuestions = [
+        "What is React?",
+        "Explain useEffect hook.",
+        "Difference between state and props?",
+        "What is Virtual DOM?",
+        "Explain React lifecycle.",
+      ];
+    } else if (
+      normalizedRole.includes("backend") || normalizedRole.includes("node")
+    ) {
+      fallbackQuestions = [
+        "What is Node.js?",
+        "Explain Express.js.",
+        "What is REST API?",
+        "Difference between SQL and NoSQL?",
+        "What is authentication?",
+      ];
+    } else if (
+      normalizedRole.includes("ai") || normalizedRole.includes("machine learning") || normalizedRole.includes("ml")
+    ) {
+      fallbackQuestions = [
+        "What is Machine Learning?",
+        "Explain TensorFlow.",
+        "Difference between AI and ML?",
+        "What is overfitting?",
+        "Explain neural networks.",
+      ];
+    } else if (
+      normalizedRole.includes("software") ||
+      normalizedRole.includes("developer") ||
+      normalizedRole.includes("development") ||
+      normalizedRole.includes("engineer") ||
+      normalizedRole.includes("full stack") ||
+      normalizedRole.includes("fullstack") ||
+      normalizedRole.includes("programmer") ||
+      normalizedRole.includes("coding") ||
+      normalizedRole.includes("intern")
+    ) {
+      fallbackQuestions = [
+        "Explain the difference between a compiler and an interpreter.",
+        "What is Git and why is version control important?",
+        "Explain the concept of OOP (Object-Oriented Programming).",
+        "What is a RESTful API and how does it work?",
+        "Describe a challenging software bug you solved recently.",
+      ];
+    }
 
-          "What is Node.js?",
-          "Explain Express.js.",
-          "What is REST API?",
-          "Difference between SQL and NoSQL?",
-          "What is authentication?",
-
-        ]);
-
-      }
-
-      else if (
-        role.includes("AI")
-      ) {
-
-        setQuestions([
-
-          "What is Machine Learning?",
-          "Explain TensorFlow.",
-          "Difference between AI and ML?",
-          "What is overfitting?",
-          "Explain neural networks.",
-
-        ]);
-
-      }
-
-      else {
-
-        setQuestions([
-
-          "Tell me about yourself.",
-          "Why should we hire you?",
-          "What are your strengths?",
-          "Where do you see yourself in 5 years?",
-          "Explain a challenging project.",
-
-        ]);
-
-      }
-
-    };
+    setQuestions(fallbackQuestions);
+    setLoadingQuestions(false);
+  };
 
   useEffect(() => {
 
@@ -794,7 +829,9 @@ function Jobs() {
                         <button
                           onClick={() =>
                             generateQuestions(
-                              job.Role || job.role || "Software Engineer"
+                              job.job_title || job.Role || job.role || "Software Engineer",
+                              job.employer_name || "Company",
+                              job.job_description || ""
                             )
                           }
                           className="rounded-2xl border border-cyan-500 px-6 py-3 font-semibold text-cyan-400 transition-all duration-300 hover:bg-cyan-500 hover:text-black"
@@ -820,7 +857,7 @@ function Jobs() {
           {/* AI Interview Popup */}
 
           {
-            questions.length > 0 && (
+            (questions.length > 0 || loadingQuestions) && (
 
               <div className="fixed bottom-6 right-6 z-50 w-[380px] rounded-3xl border border-cyan-500/20 bg-[#081028] p-8 shadow-2xl shadow-cyan-500/10">
 
@@ -843,9 +880,10 @@ function Jobs() {
                   </div>
 
                   <button
-                    onClick={() =>
-                      setQuestions([])
-                    }
+                    onClick={() => {
+                      setQuestions([]);
+                      setLoadingQuestions(false);
+                    }}
                     className="text-2xl text-slate-400 hover:text-red-400"
                   >
 
@@ -857,7 +895,12 @@ function Jobs() {
 
                 <div className="mt-6 space-y-4">
 
-                  {
+                  {loadingQuestions ? (
+                    <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                      <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent" />
+                      <p className="text-sm text-cyan-400 font-semibold animate-pulse">Generating custom AI questions...</p>
+                    </div>
+                  ) : (
                     questions.map(
                       (
                         question,
@@ -883,7 +926,7 @@ function Jobs() {
 
                       )
                     )
-                  }
+                  )}
 
                 </div>
 
