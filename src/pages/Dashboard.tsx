@@ -588,7 +588,6 @@ function Dashboard() {
           </div>
 
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between border-t border-[#1E2235]/40 mt-8 pt-6 gap-4">
-            <span>© 2026 Linkup AI. All rights reserved.</span>
             <div className="flex items-center gap-4 text-slate-400">
               <a href="https://www.linkedin.com/in/sajal-singhal-446002318" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -606,6 +605,7 @@ function Dashboard() {
                 </svg>
               </a>
             </div>
+            <span>© 2026 Linkup AI. All rights reserved.</span>
           </div>
         </footer>
 
