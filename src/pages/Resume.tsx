@@ -28,7 +28,7 @@ function Resume({ setResumeText }: any) {
       data.append("cloud_name", "daeazxq2r");
 
       const response = await fetch(
-        "https://api.cloudinary.com/v1_1/daeazxq2r/raw/upload",
+        "https://api.cloudinary.com/v1_1/daeazxq2r/image/upload",
         {
           method: "POST",
           body: data,
@@ -190,9 +190,14 @@ function Resume({ setResumeText }: any) {
           {resume && (
             <div className="mt-8 rounded-2xl bg-black/30 p-6 text-center sm:text-left">
               <h2 className="text-xl font-bold text-cyan-400 sm:text-2xl">Resume Uploaded Successfully</h2>
-              <a href={resume} target="_blank" rel="noreferrer" className="mt-4 inline-block rounded-2xl bg-cyan-400 px-6 py-3 font-semibold text-black hover:bg-cyan-300 transition-colors">
-                View Resume
-              </a>
+              <div className="mt-4 flex flex-wrap gap-4 justify-center sm:justify-start">
+                <a href={`https://docs.google.com/gview?url=${encodeURIComponent(resume)}&embedded=false`} target="_blank" rel="noreferrer" className="inline-block rounded-2xl bg-cyan-400 px-6 py-3 font-semibold text-black hover:bg-cyan-300 transition-colors">
+                  View Resume
+                </a>
+                <a href={resume} download className="inline-block rounded-2xl border border-cyan-400 px-6 py-3 font-semibold text-cyan-400 hover:bg-cyan-400/10 transition-colors">
+                  Download Resume
+                </a>
+              </div>
             </div>
           )}
         </div>

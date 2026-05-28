@@ -132,14 +132,14 @@ function Sidebar() {
       {/* ── Mobile overlay backdrop ── */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* ── Mobile drawer ── */}
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[260px] border-r border-[#1E2235] bg-[#0B0D19] p-6 text-white shadow-2xl transition-transform duration-300 ease-in-out flex flex-col lg:hidden ${
+        className={`fixed left-0 top-0 z-[100] h-full w-[260px] border-r border-[#1E2235] bg-[#0B0D19] p-6 text-white shadow-2xl transition-transform duration-300 ease-in-out flex flex-col lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
