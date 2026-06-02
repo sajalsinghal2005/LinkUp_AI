@@ -9,6 +9,7 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
+import { Link } from "react-router-dom";
 
 import { db, auth } from "../firebase/firebase";
 import { toast } from "react-hot-toast";
@@ -291,9 +292,12 @@ function Feed() {
                       {(post.isRepost ? post.originalAuthor : post.user)?.charAt(0) || "U"}
                     </div>
                     <div className="flex flex-col">
-                      <h2 className="text-sm font-semibold text-white hover:text-cyan-400 hover:underline cursor-pointer">
-                        {post.isRepost ? post.originalAuthor : post.user}
-                      </h2>
+                     <Link
+  to={`/profile/${post.userId}`}
+  className="text-sm font-semibold text-white hover:text-cyan-400 hover:underline cursor-pointer"
+>
+  {post.isRepost ? post.originalAuthor : post.user}
+</Link>
                       <p className="text-[12px] text-slate-400 mt-0.5">
                         Achiever | Building AI Solutions
                       </p>
