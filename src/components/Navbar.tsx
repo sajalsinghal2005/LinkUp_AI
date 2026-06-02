@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { signOut, onAuthStateChanged, updatePassword, updateEmail } from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { toast } from "react-hot-toast";
 
 interface Props {
@@ -69,11 +69,11 @@ function Navbar({ userData, search, onSearchChange }: Props) {
     const savePromise = async () => {
       // 1. Update Firestore Profile Details
       const userDocRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userDocRef, {
+      await setDoc(userDocRef, {
         fullName,
-        phone,
-        college,
-      });
+        phone: phone || "",
+        college: college || "",
+      }, { merge: true });
 
       // 2. Update Auth Email if changed
       if (email && email !== currentUser.email) {

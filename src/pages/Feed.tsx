@@ -36,6 +36,8 @@ function Feed() {
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
 
+  const [userNames, setUserNames] = useState<{ [uid: string]: string }>({});
+
   const fetchPosts =
     async () => {
 
@@ -60,7 +62,23 @@ function Feed() {
     };
 
   useEffect(() => {
+    const fetchUserNames = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "users"));
+        const namesMap: { [uid: string]: string } = {};
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          if (data.fullName) {
+            namesMap[doc.id] = data.fullName;
+          }
+        });
+        setUserNames(namesMap);
+      } catch (error) {
+        console.error("Error fetching user names:", error);
+      }
+    };
 
+    fetchUserNames();
     fetchPosts();
 
   }, []);
@@ -211,6 +229,7 @@ function Feed() {
       userId: auth.currentUser?.uid || "",
       isRepost: true,
       originalAuthor: post.user,
+      originalAuthorId: post.userId || "",
       createdAt: serverTimestamp(),
     });
 
@@ -291,16 +310,46 @@ function Feed() {
                 {/* LinkedIn-style Header */}
                 <div className="flex items-start justify-between p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-xl font-bold text-white shadow-lg">
-                      {(post.isRepost ? post.originalAuthor : post.user)?.charAt(0) || "U"}
-                    </div>
+                    {(() => {
+                      const profileId = post.isRepost ? (post.originalAuthorId || post.userId) : post.userId;
+                      let displayName = post.isRepost ? post.originalAuthor : post.user;
+                      if (profileId && userNames[profileId]) {
+                        displayName = userNames[profileId];
+                      } else if (displayName && displayName.includes("@")) {
+                        displayName = displayName.split("@")[0];
+                      }
+                      const firstLetter = (displayName || "U").charAt(0).toUpperCase();
+                      return (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-xl font-bold text-white shadow-lg">
+                          {firstLetter}
+                        </div>
+                      );
+                    })()}
                     <div className="flex flex-col">
-                     <Link
-  to={`/profile/${post.userId}`}
-  className="text-sm font-semibold text-white hover:text-cyan-400 hover:underline cursor-pointer"
->
-  {post.isRepost ? post.originalAuthor : post.user}
-</Link>
+                     {(() => {
+                       const profileId = post.isRepost ? (post.originalAuthorId || post.userId) : post.userId;
+                       let displayName = post.isRepost ? post.originalAuthor : post.user;
+                       if (profileId && userNames[profileId]) {
+                         displayName = userNames[profileId];
+                       } else if (displayName && displayName.includes("@")) {
+                         displayName = displayName.split("@")[0];
+                       }
+                       if (profileId && profileId !== "undefined") {
+                         return (
+                           <Link
+                             to={`/profile/${profileId}`}
+                             className="text-sm font-semibold text-white hover:text-cyan-400 hover:underline cursor-pointer"
+                           >
+                             {displayName}
+                           </Link>
+                         );
+                       }
+                       return (
+                         <span className="text-sm font-semibold text-white">
+                           {displayName}
+                         </span>
+                       );
+                     })()}
                       <p className="text-[12px] text-slate-400 mt-0.5">
                         Achiever | Building AI Solutions
                       </p>
