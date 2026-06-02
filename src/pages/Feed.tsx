@@ -120,8 +120,7 @@ function Feed() {
 
           likes: [],
 
-          user:
-            "Sajal Singhal",
+          uuser: auth.currentUser?.displayName || auth.currentUser?.email,
 
           createdAt:
             serverTimestamp(),
