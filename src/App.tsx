@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import ResumeBuilder from "./pages/ResumeBuilder";
 
 import Feed from "./pages/Feed";
+import Profile from "./pages/Profile";
 
 import AiChatbot from "./components/AiChatbot";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -99,7 +100,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-<Route path="/profile/:userId" element={<Profile />} />
+          <Route
+            path="/profile/:userId"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/applications"
             element={

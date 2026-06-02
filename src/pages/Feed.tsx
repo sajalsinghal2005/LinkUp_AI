@@ -121,7 +121,9 @@ function Feed() {
 
           likes: [],
 
-          uuser: auth.currentUser?.displayName || auth.currentUser?.email,
+          user: auth.currentUser?.displayName || auth.currentUser?.email || "Anonymous",
+
+          userId: auth.currentUser?.uid || "",
 
           createdAt:
             serverTimestamp(),
@@ -206,6 +208,7 @@ function Feed() {
       likes: [],
       comments: [],
       user: userEmail,
+      userId: auth.currentUser?.uid || "",
       isRepost: true,
       originalAuthor: post.user,
       createdAt: serverTimestamp(),
