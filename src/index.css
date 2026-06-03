@@ -1,1 +1,145 @@
 @import "tailwindcss";
+
+@theme {
+  --color-theme-bg: var(--theme-bg);
+  --color-theme-card: var(--theme-card);
+  --color-theme-element: var(--theme-element);
+  --color-theme-border: var(--theme-border);
+  --color-theme-text: var(--theme-text);
+  --color-theme-text-muted: var(--theme-text-muted);
+}
+
+:root {
+  --theme-bg: #f8fafc;
+  --theme-card: #ffffff;
+  --theme-element: #f1f5f9;
+  --theme-border: #e2e8f0;
+  --theme-text: #0f172a;
+  --theme-text-muted: #64748b;
+}
+
+.dark {
+  --theme-bg: #0b0d19;
+  --theme-card: #111322;
+  --theme-element: #1c1f37;
+  --theme-border: #1e2235;
+  --theme-text: #ffffff;
+  --theme-text-muted: #94a3b8;
+}
+
+/* Light mode overrides for existing hardcoded dark classes */
+html:not(.dark) {
+  /* Background overrides */
+  .bg-\[\#0B0D19\],
+  .bg-black {
+    background-color: var(--theme-bg) !important;
+  }
+  
+  .bg-\[\#111322\],
+  .bg-\[\#111322\]\/80,
+  .bg-\[\#0B0D19\]\/80 {
+    background-color: var(--theme-card) !important;
+  }
+  
+  .bg-\[\#1C1F37\],
+  .bg-\[\#0B0D19\]\/80,
+  .bg-\[\#111322\]\/30 {
+    background-color: var(--theme-element) !important;
+  }
+  
+  /* Border overrides */
+  .border-\[\#1E2235\],
+  .border-\[\#2A2F45\],
+  .border-\[\#1E2235\]\/80,
+  .border-\[\#1E2235\]\/60,
+  .border-\[\#1E2235\]\/40 {
+    border-color: var(--theme-border) !important;
+  }
+  
+  /* Text overrides */
+  .text-white:not(button.bg-gradient-to-r *, button.bg-\[\#6366F1\] *, .bg-gradient-to-tr *, .bg-\[\#6366F1\] *, .bg-emerald-500 *, .bg-red-500 *, .bg-blue-500 *, .bg-purple-500 *, .bg-pink-500 *, .bg-cyan-500 *, .bg-amber-500 *, .bg-indigo-600 *, .bg-[#6366F1] *, h1.bg-gradient-to-r, .rounded-full.bg-black *, h2.text-white) {
+    color: var(--theme-text) !important;
+  }
+  
+  /* Headings inside white containers or main text */
+  h1:not(.text-transparent), h2:not(.text-transparent), h3:not(.text-transparent), h4, h5, h6 {
+    color: var(--theme-text) !important;
+  }
+  
+  .text-\[\#94A3B8\],
+  .text-slate-400,
+  .text-\[\#64748B\] {
+    color: var(--theme-text-muted) !important;
+  }
+  
+  /* Additional text overrides for readability in light mode */
+  .text-indigo-400, .text-\[\#818CF8\] {
+    color: #4f46e5 !important;
+  }
+
+  .text-purple-400 {
+    color: #7c3aed !important;
+  }
+
+  .text-emerald-400 {
+    color: #059669 !important;
+  }
+
+  .text-red-400 {
+    color: #dc2626 !important;
+  }
+
+  .text-cyan-400 {
+    color: #0891b2 !important;
+  }
+  
+  /* Modal backdrop opacity/blur */
+  .bg-black\/75 {
+    background-color: rgba(15, 23, 42, 0.4) !important;
+  }
+
+  /* User menu dropdown wrapper */
+  .ring-indigo-500\/10 {
+    --tw-ring-color: rgba(79, 70, 229, 0.15) !important;
+  }
+  
+  /* Input fields */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select {
+    background-color: var(--theme-card) !important;
+    color: var(--theme-text) !important;
+    border-color: var(--theme-border) !important;
+  }
+  
+  /* AI Chatbot chat area and specific elements */
+  .border-white\/10 {
+    border-color: var(--theme-border) !important;
+  }
+
+  /* Force dashboard text elements to be dark */
+  .text-slate-300 {
+    color: #334155 !important;
+  }
+  .text-slate-200 {
+    color: #1e293b !important;
+  }
+  .text-[#D1D5DB] {
+    color: #334155 !important;
+  }
+  .text-slate-100 {
+    color: #0f172a !important;
+  }
+  .text-indigo-200 {
+    color: #4338ca !important;
+  }
+}
+
+/* Base transitions */
+* {
+  transition-property: background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}

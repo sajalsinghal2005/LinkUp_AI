@@ -25,14 +25,15 @@ import Profile from "./pages/Profile";
 import AiChatbot from "./components/AiChatbot";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import { useTheme } from "./context/ThemeContext";
+
 function App() {
 
   const [resumeText,
   setResumeText] =
   useState("");
 
-  const [darkMode] =
-  useState(true);
+  const { theme } = useTheme();
 
   return (
 
@@ -40,15 +41,15 @@ function App() {
 
       className={
 
-        darkMode
+        theme === "dark"
 
           ?
 
-          "min-h-screen bg-black text-white"
+          "min-h-screen bg-[#0B0D19] text-white"
 
           :
 
-          "min-h-screen bg-white text-black"
+          "min-h-screen bg-slate-50 text-slate-900"
 
       }
 

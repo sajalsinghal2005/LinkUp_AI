@@ -4,6 +4,7 @@ import { signOut, onAuthStateChanged, updatePassword, updateEmail } from "fireba
 import { auth, db } from "../firebase/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "react-hot-toast";
+import { useTheme } from "../context/ThemeContext";
 
 interface Props {
   userData: any;
@@ -13,6 +14,7 @@ interface Props {
 
 function Navbar({ userData, search, onSearchChange }: Props) {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(auth.currentUser);
@@ -141,6 +143,44 @@ function Navbar({ userData, search, onSearchChange }: Props) {
 
         {/* Right Actions */}
         <div className="flex items-center gap-6">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center w-10 h-10 rounded-2xl border border-[#2A2F45] bg-[#111322]/80 hover:bg-[#1C1F37] hover:border-[#6366F1]/50 text-white transition-all duration-300 active:scale-95 cursor-pointer shadow-lg"
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {theme === "dark" ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.8}
+                stroke="currentColor"
+                className="h-5 w-5 text-indigo-300 animate-[pulse_3s_infinite]"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.8}
+                stroke="currentColor"
+                className="h-5 w-5 text-amber-500 rotate-12 transition-transform duration-500 hover:rotate-45"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 3v2.25m0 13.5V21M4.22 4.22l1.59 1.59m12.38 12.38l1.59 1.59M21 12h-2.25m-13.5 0H3m2.28 7.28l1.59-1.59m12.38-12.38l1.59-1.59M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"
+                />
+              </svg>
+            )}
+          </button>
           {/* Profile Section */}
           <div className="relative">
             <div
