@@ -133,7 +133,7 @@ Give short and practical career advice.
       {
         open && (
 
-          <div className="fixed bottom-28 right-6 z-50 flex h-[600px] w-[400px] flex-col rounded-3xl border border-cyan-500/20 bg-[#081028] shadow-2xl shadow-cyan-500/20">
+          <div className="fixed bottom-24 right-4 sm:right-6 sm:bottom-28 z-50 flex h-[500px] sm:h-[600px] max-h-[calc(100vh-8rem)] w-[calc(100vw-2rem)] sm:w-[400px] flex-col rounded-3xl border border-cyan-500/20 bg-[#081028] shadow-2xl shadow-cyan-500/20">
 
             {/* Header */}
 

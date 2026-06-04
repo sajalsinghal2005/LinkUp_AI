@@ -57,7 +57,7 @@ html:not(.dark) {
   }
   
   /* Text overrides */
-  .text-white:not(button.bg-gradient-to-r *, button.bg-\[\#6366F1\] *, .bg-gradient-to-tr *, .bg-\[\#6366F1\] *, .bg-emerald-500 *, .bg-red-500 *, .bg-blue-500 *, .bg-purple-500 *, .bg-pink-500 *, .bg-cyan-500 *, .bg-amber-500 *, .bg-indigo-600 *, .bg-[#6366F1] *, h1.bg-gradient-to-r, .rounded-full.bg-black *, h2.text-white) {
+  .text-white:not(button.bg-gradient-to-r *, button.bg-\[\#6366F1\] *, .bg-gradient-to-tr *, .bg-\[\#6366F1\] *, .bg-emerald-500 *, .bg-red-500 *, .bg-blue-500 *, .bg-purple-500 *, .bg-pink-500 *, .bg-cyan-500 *, .bg-amber-500 *, .bg-indigo-600 *, .bg-\[\#6366F1\] *, h1.bg-gradient-to-r, .rounded-full.bg-black *, h2.text-white) {
     color: var(--theme-text) !important;
   }
   
@@ -126,7 +126,7 @@ html:not(.dark) {
   .text-slate-200 {
     color: #1e293b !important;
   }
-  .text-[#D1D5DB] {
+  .text-\[\#D1D5DB\] {
     color: #334155 !important;
   }
   .text-slate-100 {

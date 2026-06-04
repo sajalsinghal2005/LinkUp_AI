@@ -325,26 +325,13 @@ console.log("Document exists:", userDocSnap.exists());
                         className="p-4 rounded-xl border border-[#1E2235] bg-[#1C1F37]/30 text-slate-200"
                       >
                         <p className="text-sm whitespace-pre-wrap leading-relaxed">{post.text}</p>
-                        {post.image && (
+                        {post.image && !post.image.toLowerCase().includes('.pdf') && (
                           <div className="mt-3 overflow-hidden rounded-lg border border-slate-800 bg-[#0f1115] max-h-[300px]">
-                            {post.image.toLowerCase().includes('.pdf') ? (
-                              <div className="p-4 text-center">
-                                <a
-                                  href={post.image}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-cyan-400 hover:underline"
-                                >
-                                  📄 View PDF Certificate
-                                </a>
-                              </div>
-                            ) : (
-                              <img
-                                src={post.image}
-                                alt="Activity attachment"
-                                className="w-full object-cover"
-                              />
-                            )}
+                            <img
+                              src={post.image}
+                              alt="Activity attachment"
+                              className="w-full object-cover"
+                            />
                           </div>
                         )}
                         <div className="mt-3 flex items-center gap-4 text-xs text-[#64748B]">

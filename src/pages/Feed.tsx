@@ -377,41 +377,13 @@ function Feed() {
                 </div>
 
                 {/* Media (Image / Document) */}
-                {post.image && (
+                {post.image && !post.image.toLowerCase().includes('.pdf') && (
                   <div className="mt-2 w-full border-t border-b border-slate-700 bg-[#0f1115]">
-                    {post.image.toLowerCase().includes('.pdf') ? (
-                      <div className="relative group flex flex-col items-center bg-white/5">
-                        <img
-                          src={post.image.replace(/\.pdf$/i, '.jpg')}
-                          alt="Achievement Certificate Preview"
-                          className="w-full object-contain max-h-[600px]"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            const linkDiv = e.currentTarget.nextElementSibling as HTMLElement;
-                            if (linkDiv) {
-                              linkDiv.classList.remove('opacity-0', 'group-hover:opacity-100', 'bg-black/40');
-                              linkDiv.classList.add('opacity-100', 'h-[200px]');
-                            }
-                          }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                          <a
-                            href={post.image}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-full border border-cyan-400 bg-cyan-900/50 px-6 py-2 text-sm font-semibold text-cyan-400 backdrop-blur-md transition hover:bg-cyan-400 hover:text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]"
-                          >
-                            📄 Open PDF Document
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <img
-                        src={post.image}
-                        alt="post media"
-                        className="w-full object-cover max-h-[600px]"
-                      />
-                    )}
+                    <img
+                      src={post.image}
+                      alt="post media"
+                      className="w-full object-cover max-h-[600px]"
+                    />
                   </div>
                 )}
 
