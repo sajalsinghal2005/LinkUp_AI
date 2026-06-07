@@ -89,9 +89,19 @@ Give short and practical career advice.
 
     }
 
-    catch (error) {
+    catch (error: any) {
 
       console.log(error);
+      const errorMsg = error?.message || String(error);
+      let text = "AI failed to respond.";
+      if (
+        errorMsg.includes("429") ||
+        errorMsg.toLowerCase().includes("quota") ||
+        errorMsg.toLowerCase().includes("rate limit") ||
+        errorMsg.toLowerCase().includes("resource_exhausted")
+      ) {
+        text = "AI failed to respond: Google Gemini API quota exceeded or rate limited. Please try again in a few seconds.";
+      }
 
       setMessages((prev) => [
 
@@ -101,8 +111,7 @@ Give short and practical career advice.
 
           type: "ai",
 
-          text:
-            "AI failed to respond.",
+          text,
 
         },
 

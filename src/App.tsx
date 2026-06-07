@@ -18,7 +18,7 @@ import Settings from "./pages/Settings";
 import SavedJobs from "./pages/SavedJobs";
 import Admin from "./pages/Admin";
 import ResumeBuilder from "./pages/ResumeBuilder";
-
+import SkillGap from "./pages/SkillGap";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
 
@@ -119,6 +119,24 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/resume-builder"
+  element={
+    <ProtectedRoute>
+      <ResumeBuilder />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/skill-gap"
+  element={
+    <ProtectedRoute>
+      <SkillGap
+        resumeText={resumeText}
+      />
+    </ProtectedRoute>
+  }
+/>
 
           <Route
             path="/saved-jobs"

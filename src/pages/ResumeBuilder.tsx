@@ -13,9 +13,11 @@ function ResumeBuilder() {
   const [education, setEducation] = useState("");
   const [resume, setResume] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const generateResume = async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -38,9 +40,18 @@ Format professionally.
 `,
       });
       setResume(result.text || "No resume text generated.");
-    } catch (error: any) {
-      console.error(error);
-      setResume(`Resume generation failed: ${error?.message || error || "Unknown Error"}`);
+    } catch (err: any) {
+      console.error(err);
+      let errorMsg = err?.message || String(err);
+      if (
+        errorMsg.includes("429") ||
+        errorMsg.toLowerCase().includes("quota") ||
+        errorMsg.toLowerCase().includes("rate limit") ||
+        errorMsg.toLowerCase().includes("resource_exhausted")
+      ) {
+        errorMsg = "Google Gemini API Quota Exceeded (429: Too Many Requests). Please verify your billing details or retry in a few seconds.";
+      }
+      setError(errorMsg);
     }
     setLoading(false);
   };
@@ -94,6 +105,15 @@ Format professionally.
             {loading ? "Generating..." : "Generate Resume"}
           </button>
         </div>
+        {error && (
+          <div className="mt-6 p-4 rounded-3xl border border-red-500/20 bg-[#1f0d11] text-red-200 flex items-start gap-3 shadow-[0_0_20px_rgba(239,68,68,0.15)] backdrop-blur-md">
+            <span className="text-xl">⚠️</span>
+            <div className="flex-1">
+              <h3 className="font-bold text-red-400">Generation Error</h3>
+              <p className="text-sm mt-1 text-red-300/90">{error}</p>
+            </div>
+          </div>
+        )}
 
         {resume && (
           <div className="mt-10 rounded-3xl border border-cyan-500/20 bg-[#081028] p-4 sm:p-6 lg:p-8">

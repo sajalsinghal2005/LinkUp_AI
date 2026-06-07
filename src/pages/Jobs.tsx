@@ -51,6 +51,8 @@ function Jobs() {
   const [selectedRole, setSelectedRole] =
     useState("");
 
+  const [isFallback, setIsFallback] = useState(false);
+
   // Resume Skills — read from localStorage (set by Resume page on upload)
   const [resumeSkills] = useState(
     () => localStorage.getItem("resumeText")?.toLowerCase() || ""
@@ -61,6 +63,7 @@ function Jobs() {
     setSelectedRole(role);
     setLoadingQuestions(true);
     setQuestions([]);
+    setIsFallback(false);
 
     try {
       const response = await ai.models.generateContent({
@@ -89,6 +92,7 @@ Provide the output as a simple numbered list, one question per line, starting wi
       }
     } catch (error) {
       console.error("Error generating dynamic questions:", error);
+      setIsFallback(true);
     }
 
     // FALLBACK
@@ -894,6 +898,12 @@ Provide the output as a simple numbered list, one question per line, starting wi
                 </div>
 
                 <div className="mt-6 space-y-4">
+                  {isFallback && (
+                    <div className="p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-300 text-xs flex items-start gap-2 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
+                      <span>⚠️</span>
+                      <span>Gemini API rate limited or quota exceeded. Showing fallback questions.</span>
+                    </div>
+                  )}
 
                   {loadingQuestions ? (
                     <div className="flex flex-col items-center justify-center py-10 space-y-4">

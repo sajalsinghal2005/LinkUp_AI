@@ -182,13 +182,24 @@ Keep response short.
 
     }
 
-    catch (error) {
+    catch (error: any) {
 
       console.log(error);
-
-      setFeedback(
-        "AI feedback failed."
-      );
+      const errorMsg = error?.message || String(error);
+      if (
+        errorMsg.includes("429") ||
+        errorMsg.toLowerCase().includes("quota") ||
+        errorMsg.toLowerCase().includes("rate limit") ||
+        errorMsg.toLowerCase().includes("resource_exhausted")
+      ) {
+        setFeedback(
+          "AI evaluation failed: Google Gemini API quota exceeded or rate limited. Please try again in a few seconds."
+        );
+      } else {
+        setFeedback(
+          `AI feedback failed: ${errorMsg}`
+        );
+      }
 
     }
 
