@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { GoogleGenAI }
-from "@google/genai";
+import { generateContentWithFallback } from "../utils/gemini";
 interface VoiceInterviewProps {
   job?: {
     job_title: string;
@@ -71,13 +70,7 @@ useState(0);
   const [listening,
   setListening] =
   useState(false);
-const ai =
-  new GoogleGenAI({
 
-    apiKey:
-      import.meta.env.VITE_GEMINI_API_KEY,
-
-  });
  const startListening = () => {
 
   const SpeechRecognition =
@@ -129,7 +122,7 @@ const ai =
     try {
 
       const result =
-        await ai.models.generateContent({
+        await generateContentWithFallback({
 
           model:
             "gemini-2.5-flash",

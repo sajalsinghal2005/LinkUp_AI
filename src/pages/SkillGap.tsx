@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { GoogleGenAI } from "@google/genai";
+import ReactMarkdown from "react-markdown";
+import { generateContentWithFallback } from "../utils/gemini";
 
-
-const ai = new GoogleGenAI({
-  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
-});
 
 type SkillGapProps = {
   resumeText: string;
@@ -43,30 +40,32 @@ ${resumeData}
 Target Role:
 ${role}
 
-Return ONLY valid JSON.
+Analyze the candidate's resume against the target role and return ONLY valid JSON matching the following schema.
 
+Schema:
 {
-"matchScore":80,
-"currentSkills":[""],
-"missingSkills":[""],
-"strengths":[""],
-"weaknesses":[""],
-"roadmap":{
-"month1":[""],
-"month2":[""],
-"month3":[""]
-},
-"projects":[""]
+  "matchScore": 80,
+  "currentSkills": ["skill1", "skill2"],
+  "missingSkills": ["skill3", "skill4"],
+  "strengths": ["strength1", "strength2"],
+  "weaknesses": ["weakness1", "weakness2"],
+  "roadmap": {
+    "month1": ["goal1", "goal2"],
+    "month2": ["goal3", "goal4"],
+    "month3": ["goal5", "goal6"]
+  },
+  "projects": ["project1", "project2"]
 }
 
-No markdown.
-No explanation.
-No code block.
+Ensure the response contains no other text, explanation, markdown, or code blocks.
 `;
 
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithFallback({
         model: "gemini-2.5-flash",
         contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        },
       });
 
      const result = JSON.parse(response.text || "{}");
@@ -245,9 +244,24 @@ setAnalysis(result);
 
           </div>
         ) : (
-          <pre className="whitespace-pre-wrap text-gray-300">
-            Upload resume and click Analyze to see results.
-          </pre>
+          <div className="mt-8 rounded-3xl border border-cyan-500/20 bg-[#081028] p-8">
+  <h2 className="text-2xl font-bold text-cyan-400 mb-6">
+    AI Analysis Result
+  </h2>
+
+  {loading ? (
+    <div className="text-cyan-400 animate-pulse">
+      🤖 AI is analyzing your profile...
+    </div>
+  ) : (
+    <div className="prose prose-invert max-w-none">
+      <ReactMarkdown>
+        {analysis ||
+          "Upload resume and click Analyze to see results."}
+      </ReactMarkdown>
+    </div>
+  )}
+</div>
         )}
       </div>
     </div>

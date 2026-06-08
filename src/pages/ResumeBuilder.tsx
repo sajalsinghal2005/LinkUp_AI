@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { GoogleGenAI } from "@google/genai";
 import Sidebar from "../components/Slidebar";
+import { generateContentWithFallback } from "../utils/gemini";
 
-const ai = new GoogleGenAI({
-  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
-});
 
 function ResumeBuilder() {
   const [name, setName] = useState("");
@@ -19,7 +16,7 @@ function ResumeBuilder() {
     setLoading(true);
     setError(null);
     try {
-      const result = await ai.models.generateContent({
+      const result = await generateContentWithFallback({
         model: "gemini-2.5-flash",
         contents: `
 Create a professional ATS friendly resume.

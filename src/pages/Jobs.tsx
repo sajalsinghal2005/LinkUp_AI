@@ -6,12 +6,10 @@ import Sidebar from "../components/Slidebar";
 import Navbar from "../components/Navbar";
 import emailjs from "emailjs-com";
 import axios from "axios";
-import { GoogleGenAI } from "@google/genai";
+import { generateContentWithFallback } from "../utils/gemini";
 
 function Jobs() {
-  const ai = new GoogleGenAI({
-    apiKey: import.meta.env.VITE_GEMINI_API_KEY,
-  });
+
 
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<any[]>([]);
@@ -66,7 +64,7 @@ function Jobs() {
     setIsFallback(false);
 
     try {
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithFallback({
         model: "gemini-2.5-flash",
         contents: `You are an expert technical interviewer. Generate exactly 5 relevant, highly-tailored interview questions for a candidate applying to the following job:
 Role: ${role}
