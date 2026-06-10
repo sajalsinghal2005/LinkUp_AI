@@ -144,3 +144,37 @@ html:not(.dark) {
   transition-duration: 200ms;
 }
 
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Hide all UI elements including sidebar and control panel */
+  .print\:hidden,
+  header,
+  nav,
+  aside,
+  button,
+  .sidebar-container,
+  .Slidebar,
+  input,
+  textarea {
+    display: none !important;
+  }
+  
+  /* Make the print preview occupy the full page */
+  .resume-print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+

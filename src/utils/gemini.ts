@@ -14,55 +14,59 @@ interface GenerateContentOptions {
 
 export async function generateContentWithFallback(
   options: GenerateContentOptions,
-  retries = 3,
+  retries = 2,
   delayMs = 1000
 ): Promise<any> {
-  const modelToUse = options.model || "gemini-2.5-flash";
+  const requestedModel = options.model || "gemini-2.5-flash";
+
+  // Define fallback chain of models to try in order
+  const fallbackModels = [
+    requestedModel,
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+  ];
+
+  // De-duplicate while preserving order
+  const modelsToTry = Array.from(new Set(fallbackModels));
   let lastError: any = null;
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const response = await aiClient.models.generateContent({
-        ...options,
-        model: modelToUse,
-      });
-      return response;
-    } catch (err: any) {
-      lastError = err;
-      const errorMsg = err?.message || String(err);
-      
-      const isRetryable =
-        errorMsg.includes("503") ||
-        errorMsg.includes("429") ||
-        errorMsg.toLowerCase().includes("quota") ||
-        errorMsg.toLowerCase().includes("rate limit") ||
-        errorMsg.toLowerCase().includes("resource_exhausted") ||
-        errorMsg.toLowerCase().includes("unavailable") ||
-        errorMsg.toLowerCase().includes("demand");
+  for (const model of modelsToTry) {
+    let attempt = 1;
+    while (attempt <= retries) {
+      try {
+        const response = await aiClient.models.generateContent({
+          ...options,
+          model: model,
+        });
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        const errorMsg = err?.message || String(err);
 
-      if (isRetryable && attempt < retries) {
-        console.warn(
-          `Gemini call failed (attempt ${attempt}/${retries}). Retrying in ${delayMs * attempt}ms... Error: ${errorMsg}`
-        );
-        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
-      } else {
-        break;
+        const isRetryable =
+          errorMsg.includes("503") ||
+          errorMsg.includes("429") ||
+          errorMsg.toLowerCase().includes("quota") ||
+          errorMsg.toLowerCase().includes("rate limit") ||
+          errorMsg.toLowerCase().includes("resource_exhausted") ||
+          errorMsg.toLowerCase().includes("unavailable") ||
+          errorMsg.toLowerCase().includes("demand");
+
+        if (isRetryable && attempt < retries) {
+          console.warn(
+            `Gemini call failed for model ${model} (attempt ${attempt}/${retries}). Retrying in ${delayMs * attempt}ms... Error: ${errorMsg}`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+          attempt++;
+        } else {
+          console.warn(
+            `Model ${model} failed (Error: ${errorMsg}). Trying next fallback model...`
+          );
+          break; // Break retry loop, try next model in fallback list
+        }
       }
-    }
-  }
-
-  // Fallback to gemini-1.5-flash if we started with gemini-2.5-flash
-  if (modelToUse === "gemini-2.5-flash") {
-    console.warn(`gemini-2.5-flash failed or experienced high demand. Falling back to gemini-1.5-flash...`);
-    try {
-      const response = await aiClient.models.generateContent({
-        ...options,
-        model: "gemini-1.5-flash",
-      });
-      return response;
-    } catch (fallbackErr: any) {
-      console.error("Fallback to gemini-1.5-flash also failed:", fallbackErr);
-      throw fallbackErr;
     }
   }
 

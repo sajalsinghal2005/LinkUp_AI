@@ -79,8 +79,8 @@ Provide the output as a simple numbered list, one question per line, starting wi
       const text = response.text || "";
       const lines = text
         .split("\n")
-        .map(line => line.replace(/^\d+\.\s*/, "").replace(/^-\s*/, "").trim())
-        .filter(line => line.length > 0)
+        .map((line: string) => line.replace(/^\d+\.\s*/, "").replace(/^-\s*/, "").trim())
+        .filter((line: string) => line.length > 0)
         .slice(0, 5);
 
       if (lines.length >= 3) {
