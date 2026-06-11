@@ -14,6 +14,11 @@ const cleanGeminiResponse = (text: string): string => {
     .trim();
 };
 
+const hasContent = (str: string | null | undefined): boolean => {
+  if (!str) return false;
+  return /[a-zA-Z0-9]/.test(str);
+};
+
 function ResumeBuilder() {
   const [name, setName] = useState("");
   const [skills, setSkills] = useState("");
@@ -314,7 +319,7 @@ Example format:
             {/* Header / Contact Info */}
             <div className="text-center">
               <h1 className="text-2xl font-bold uppercase tracking-wider text-[#0f2e5c] font-sans">
-                {name || "SAJAL SINGHAL"}
+                {name || ""}
               </h1>
               <div className="mt-1 flex flex-wrap justify-center items-center gap-1.5 text-[11px] text-gray-700 font-sans">
                 {phone && <span>{phone}</span>}
@@ -336,23 +341,25 @@ Example format:
             </div>
 
             {/* Professional Summary */}
-            <div className="mt-4">
-              <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
-                Professional Summary
-              </h2>
-              <p className="mt-1.5 text-justify text-gray-800">
-                {summary || "Motivated student with experience in software development. Detail-oriented and eager to build scalable web applications."}
-              </p>
-            </div>
+            {hasContent(summary) && (
+              <div className="mt-4">
+                <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
+                  Professional Summary
+                </h2>
+                <p className="mt-1.5 text-justify text-gray-800">
+                  {summary}
+                </p>
+              </div>
+            )}
 
             {/* Technical Skills */}
-            <div className="mt-4">
-              <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
-                Technical Skills
-              </h2>
-              <div className="mt-1.5 space-y-0.5 text-gray-800">
-                {skills ? (
-                  skills.split("\n").map((line, idx) => {
+            {hasContent(skills) && (
+              <div className="mt-4">
+                <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
+                  Technical Skills
+                </h2>
+                <div className="mt-1.5 space-y-0.5 text-gray-800">
+                  {skills.split("\n").map((line, idx) => {
                     const parts = line.split(":");
                     if (parts.length > 1) {
                       return (
@@ -363,25 +370,19 @@ Example format:
                       );
                     }
                     return <div key={idx}>{line}</div>;
-                  })
-                ) : (
-                  <>
-                    <div><span className="font-bold mr-1 font-sans">Languages:</span> C, C++, Java, Python, JavaScript, SQL</div>
-                    <div><span className="font-bold mr-1 font-sans">Frontend:</span> HTML5, CSS3, React, Tailwind CSS</div>
-                    <div><span className="font-bold mr-1 font-sans">Backend:</span> Node.js, Express.js, Firebase</div>
-                  </>
-                )}
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Education */}
-            <div className="mt-4">
-              <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
-                Education
-              </h2>
-              <div className="mt-1.5 space-y-1 text-gray-800">
-                {education ? (
-                  education.split("\n").map((eduLine, idx) => {
+            {hasContent(education) && (
+              <div className="mt-4">
+                <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
+                  Education
+                </h2>
+                <div className="mt-1.5 space-y-1 text-gray-800">
+                  {education.split("\n").map((eduLine, idx) => {
                     const parts = eduLine.split("|");
                     if (parts.length >= 2) {
                       const title = parts[0].trim();
@@ -398,104 +399,38 @@ Example format:
                       );
                     }
                     return <div key={idx} className="font-bold font-sans">{eduLine}</div>;
-                  })
-                ) : (
-                  <div className="flex justify-between items-baseline">
-                    <div>
-                      <span className="font-bold font-sans">B.Tech – Computer Science & Engineering</span>
-                      <span className="text-gray-700"> | SKIT, Jaipur</span>
-                    </div>
-                    <span className="italic text-gray-600 text-[11px] font-sans">2024 – 2028</span>
-                  </div>
-                )}
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Projects */}
-            <div className="mt-4">
-              <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
-                Projects
-              </h2>
-              <div className="mt-1.5 space-y-3 text-gray-800">
-                {projectBullets ? (
-                  <div className="whitespace-pre-wrap leading-relaxed">{projectBullets}</div>
-                ) : projects ? (
-                  projects.split("\n\n").map((proj, idx) => {
-                    const lines = proj.split("\n");
-                    const titleLine = lines[0] || "";
-                    const techLine = lines[1] || "";
-                    const bulletLines = lines.slice(2);
-
-                    const titleParts = titleLine.split("|");
-                    const title = titleParts[0].trim();
-                    const date = titleParts[1] ? titleParts[1].trim() : "";
-
-                    return (
-                      <div key={idx}>
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-bold font-sans">{title}</span>
-                          {date && <span className="italic text-gray-600 text-[11px] font-sans">{date}</span>}
-                        </div>
-                        {techLine && <div className="text-[10.5px] text-gray-500 italic font-sans">{techLine}</div>}
-                        {bulletLines.length > 0 ? (
-                          <ul className="list-disc pl-5 mt-0.5 space-y-0.5">
-                            {bulletLines.map((b, i) => (
-                              <li key={i}>{b.replace(/^[-*•]\s*/, "")}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <ul className="list-disc pl-5 mt-0.5 space-y-0.5">
-                            <li>Developed key modules and implemented high-performance features.</li>
-                          </ul>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div>
-                    <div className="flex justify-between items-baseline">
-                      <span className="font-bold font-sans">API Hub — Blockchain-Powered API Gateway</span>
-                      <span className="italic text-gray-600 text-[11px] font-sans">2024</span>
-                    </div>
-                    <div className="text-[10.5px] text-gray-500 italic font-sans">
-                      Node.js · JavaScript · Monad Blockchain · MetaMask · Smart Contracts · HTML · CSS
-                    </div>
-                    <ul className="list-disc pl-5 mt-0.5 space-y-0.5">
-                      <li>Architected a pay-per-use API marketplace using smart contracts on Monad blockchain.</li>
-                      <li>Built full-stack backend with Node.js & Express.js with real-time usage tracking.</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Work Experience */}
-            {(workExperience || !projects) && (
+            {(hasContent(projects) || hasContent(projectBullets)) && (
               <div className="mt-4">
                 <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
-                  Work Experience
+                  Projects
                 </h2>
                 <div className="mt-1.5 space-y-3 text-gray-800">
-                  {workExperience ? (
-                    workExperience.split("\n\n").map((exp, idx) => {
-                      const lines = exp.split("\n");
-                      const headerLine = lines[0] || "";
-                      const bulletLines = lines.slice(1);
+                  {hasContent(projectBullets) ? (
+                    <div className="whitespace-pre-wrap leading-relaxed">{projectBullets}</div>
+                  ) : (
+                    projects.split("\n\n").map((proj, idx) => {
+                      const lines = proj.split("\n");
+                      const titleLine = lines[0] || "";
+                      const techLine = lines[1] || "";
+                      const bulletLines = lines.slice(2);
 
-                      const headerParts = headerLine.split("|");
-                      const title = headerParts[0].trim();
-                      const company = headerParts[1] ? headerParts[1].trim() : "";
-                      const date = headerParts[2] ? headerParts[2].trim() : "";
+                      const titleParts = titleLine.split("|");
+                      const title = titleParts[0].trim();
+                      const date = titleParts[1] ? titleParts[1].trim() : "";
 
                       return (
                         <div key={idx}>
                           <div className="flex justify-between items-baseline">
-                            <div>
-                              <span className="font-bold font-sans">{title}</span>
-                              {company && <span className="text-gray-700"> | {company}</span>}
-                            </div>
+                            <span className="font-bold font-sans">{title}</span>
                             {date && <span className="italic text-gray-600 text-[11px] font-sans">{date}</span>}
                           </div>
+                          {techLine && <div className="text-[10.5px] text-gray-500 italic font-sans">{techLine}</div>}
                           {bulletLines.length > 0 && (
                             <ul className="list-disc pl-5 mt-0.5 space-y-0.5">
                               {bulletLines.map((b, i) => (
@@ -506,69 +441,82 @@ Example format:
                         </div>
                       );
                     })
-                  ) : (
-                    <div>
-                      <div className="flex justify-between items-baseline">
-                        <div>
-                          <span className="font-bold font-sans">Data Analytics Intern & Team Lead</span>
-                          <span className="text-gray-700"> | UptoSkills (Remote)</span>
-                        </div>
-                        <span className="italic text-gray-600 text-[11px] font-sans">Dec 2025 – Mar 2026</span>
-                      </div>
-                      <ul className="list-disc pl-5 mt-0.5 space-y-0.5">
-                        <li>Led a cross-functional team of analysts, delegated tasks, and ensured timely delivery of reports.</li>
-                      </ul>
-                    </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Work Experience */}
+            {hasContent(workExperience) && (
+              <div className="mt-4">
+                <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
+                  Work Experience
+                </h2>
+                <div className="mt-1.5 space-y-3 text-gray-800">
+                  {workExperience.split("\n\n").map((exp, idx) => {
+                    const lines = exp.split("\n");
+                    const headerLine = lines[0] || "";
+                    const bulletLines = lines.slice(1);
+
+                    const headerParts = headerLine.split("|");
+                    const title = headerParts[0].trim();
+                    const company = headerParts[1] ? headerParts[1].trim() : "";
+                    const date = headerParts[2] ? headerParts[2].trim() : "";
+
+                    return (
+                      <div key={idx}>
+                        <div className="flex justify-between items-baseline">
+                          <div>
+                            <span className="font-bold font-sans">{title}</span>
+                            {company && <span className="text-gray-700"> | {company}</span>}
+                          </div>
+                          {date && <span className="italic text-gray-600 text-[11px] font-sans">{date}</span>}
+                        </div>
+                        {bulletLines.length > 0 && (
+                          <ul className="list-disc pl-5 mt-0.5 space-y-0.5">
+                            {bulletLines.map((b, i) => (
+                              <li key={i}>{b.replace(/^[-*•]\s*/, "")}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Certifications */}
-            {(certifications || !projects) && (
+            {hasContent(certifications) && (
               <div className="mt-4">
                 <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
                   Certifications
                 </h2>
                 <div className="mt-1.5 text-gray-800">
-                  {certifications ? (
-                    <div className="flex flex-wrap gap-y-1 gap-x-4">
-                      {certifications.split("\n").map((cert, idx) => (
-                        <div key={idx} className="flex items-center">
-                          <span className="mr-1.5">•</span>
-                          <span>{cert}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-y-1 gap-x-4">
-                      <span>• Java Basic & Advanced | E&ICT Academy, IIT Kanpur</span>
-                      <span>• Python for Data Science | E&ICT Academy, IIT Kanpur</span>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-y-1 gap-x-4">
+                    {certifications.split("\n").map((cert, idx) => (
+                      <div key={idx} className="flex items-center">
+                        <span className="mr-1.5">•</span>
+                        <span>{cert}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Hackathons & Achievements */}
-            {(achievements || !projects) && (
+            {hasContent(achievements) && (
               <div className="mt-4">
                 <h2 className="text-[12px] font-bold uppercase tracking-wider text-[#0f2e5c] border-b-2 border-[#0f2e5c] pb-0.5 font-sans">
                   Hackathons & Achievements
                 </h2>
                 <div className="mt-1.5 text-gray-800">
-                  {achievements ? (
-                    <ul className="list-disc pl-5 space-y-0.5">
-                      {achievements.split("\n").map((ach, idx) => (
-                        <li key={idx}>{ach.replace(/^[-*•]\s*/, "")}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <ul className="list-disc pl-5 space-y-0.5">
-                      <li>LNM Hacks 8.0 (72-hr LNMIIT) - Finalist</li>
-                      <li>Genisys 1.0 (24-hr MNIT) - 1st Runner Up</li>
-                    </ul>
-                  )}
+                  <ul className="list-disc pl-5 space-y-0.5">
+                    {achievements.split("\n").map((ach, idx) => (
+                      <li key={idx}>{ach.replace(/^[-*•]\s*/, "")}</li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             )}
