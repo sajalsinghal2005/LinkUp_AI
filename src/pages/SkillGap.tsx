@@ -1,15 +1,14 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { generateContentWithFallback } from "../utils/gemini";
-
 import Sidebar from "../components/Slidebar";
+import Navbar from "../components/Navbar";
+
 type SkillGapProps = {
   resumeText: string;
 };
 
-export default function SkillGap({
-  resumeText,
-}: SkillGapProps) {
+export default function SkillGap({ resumeText }: SkillGapProps) {
   const [role, setRole] = useState("");
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -20,8 +19,7 @@ export default function SkillGap({
       setLoading(true);
       setError(null);
 
-      const resumeData =
-        resumeText || localStorage.getItem("resumeText");
+      const resumeData = resumeText || localStorage.getItem("resumeText");
 
       if (!resumeData) {
         setError("No resume text found. Please upload a resume first.");
@@ -33,7 +31,7 @@ export default function SkillGap({
         return;
       }
 
-const prompt = `
+      const prompt = `
 Resume:
 ${resumeData}
 
@@ -68,8 +66,8 @@ Ensure the response contains no other text, explanation, markdown, or code block
         },
       });
 
-     const result = JSON.parse(response.text || "{}");
-setAnalysis(result);
+      const result = JSON.parse(response.text || "{}");
+      setAnalysis(result);
     } catch (err: any) {
       console.error(err);
       let errorMsg = err?.message || String(err);
@@ -79,7 +77,7 @@ setAnalysis(result);
         errorMsg.toLowerCase().includes("rate limit") ||
         errorMsg.toLowerCase().includes("resource_exhausted")
       ) {
-        errorMsg = "Google Gemini API Quota Exceeded (429: Too Many Requests). Please verify your billing details or retry in a few seconds.";
+        errorMsg = "Google Gemini API Quota Exceeded (429: Too Many Requests). Please retry in a few seconds.";
       }
       setError(errorMsg);
     } finally {
@@ -88,180 +86,144 @@ setAnalysis(result);
   };
 
   return (
-    <div className="flex min-h-screen bg-[#0B0D19] pt-16 lg:pt-0">
+    <div className="flex min-h-screen bg-[#07080d] pt-16 lg:pt-0 w-full overflow-x-hidden font-sans text-white">
       <Sidebar />
 
-      <div className="flex-1 w-full min-w-0 overflow-x-hidden flex flex-col p-4 sm:p-6 lg:p-8 text-white">
-        <h1 className="text-3xl font-bold mb-6">
-          AI Skill Gap Analyzer
-        </h1>
+      <div className="flex-1 w-full min-w-0 overflow-x-hidden flex flex-col relative z-10">
+        <Navbar userData={null} />
 
-        <div className="mb-6">
-          <label className="block mb-2">
-            Target Role
-          </label>
-
-          <select
-            className="w-full p-3 rounded bg-gray-800"
-            value={role}
-            onChange={(e) =>
-              setRole(e.target.value)
-            }
-          >
-            <option value="">
-              Select Role
-            </option>
-
-            <option>MERN Developer</option>
-            <option>Frontend Developer</option>
-            <option>Backend Developer</option>
-            <option>Software Engineer</option>
-            <option>AI Engineer</option>
-          </select>
-        </div>
-
-        <button
-          onClick={handleAnalyze}
-          className="bg-blue-600 px-5 py-3 rounded"
-        >
-          Analyze Skills
-        </button>
-
-        {error && (
-          <div className="mt-6 p-4 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-200 flex items-start gap-3 shadow-[0_0_20px_rgba(239,68,68,0.15)] backdrop-blur-md">
-            <span className="text-xl">⚠️</span>
-            <div className="flex-1">
-              <h3 className="font-bold text-red-400">Analysis Error</h3>
-              <p className="text-sm mt-1 text-red-300/90">{error}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-8 border border-gray-700 p-5 rounded">
-          <h2 className="text-xl font-semibold">
-            Analysis Result
-          </h2>
-
-          {loading ? (
-            <p className="text-cyan-400">
-              Analyzing...
+        <div className="p-4 sm:p-6 lg:p-8 flex-1 space-y-8 animate-fade-in-up">
+          
+          <div>
+            <h1 className="text-3xl font-extrabold sm:text-4xl lg:text-5xl font-display tracking-tight">
+              Skill-Gap Analyzer
+            </h1>
+            <p className="mt-2 text-sm text-[#94a3b8] font-medium">
+              Analyze your resume keywords against your target career path to map out a learning roadmap.
             </p>
-          ) : analysis ? (
-            <div className="mt-6 grid md:grid-cols-2 gap-6">
+          </div>
 
-              {/* Match Score */}
-              <div className="bg-gray-900 p-6 rounded-2xl border border-gray-700">
-                <h2 className="text-xl font-bold text-cyan-400">
-                  Match Score
-                </h2>
-
-                <p className="text-5xl mt-4 font-bold">
-                  {analysis.matchScore}%
-                </p>
-              </div>
-
-              {/* Current Skills */}
-              <div className="bg-gray-900 p-6 rounded-2xl border border-gray-700">
-                <h2 className="text-xl font-bold text-green-400 mb-4">
-                  Current Skills
-                </h2>
-
-                <ul className="space-y-2">
-                  {analysis.currentSkills?.map(
-                    (skill: string, index: number) => (
-                      <li key={index}>
-                        ✅ {skill}
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-
-              {/* Missing Skills */}
-              <div className="bg-gray-900 p-6 rounded-2xl border border-gray-700">
-                <h2 className="text-xl font-bold text-red-400 mb-4">
-                  Missing Skills
-                </h2>
-
-                <ul className="space-y-2">
-                  {analysis.missingSkills?.map(
-                    (skill: string, index: number) => (
-                      <li key={index}>
-                        ❌ {skill}
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-
-              {/* Strengths */}
-              <div className="bg-gray-900 p-6 rounded-2xl border border-gray-700">
-                <h2 className="text-xl font-bold text-blue-400 mb-4">
-                  Strengths
-                </h2>
-
-                <ul className="space-y-2">
-                  {analysis.strengths?.map(
-                    (item: string, index: number) => (
-                      <li key={index}>
-                        ⭐ {item}
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-
-              {/* Weaknesses */}
-              <div className="bg-gray-900 p-6 rounded-2xl border border-gray-700">
-                <h2 className="text-xl font-bold text-yellow-400 mb-4">
-                  Weaknesses
-                </h2>
-
-                <ul className="space-y-2">
-                  {analysis.weaknesses?.map(
-                    (item: string, index: number) => (
-                      <li key={index}>
-                        ⚠️ {item}
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-
-              {/* Projects */}
-              <div className="bg-gray-900 p-6 rounded-2xl border border-gray-700">
-                <h2 className="text-xl font-bold text-purple-400 mb-4">
-                  Suggested Projects
-                </h2>
-
-                <ul className="space-y-2">
-                  {analysis.projects?.map(
-                    (project: string, index: number) => (
-                      <li key={index}>
-                        🚀 {project}
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-
+          <div className="glass-panel rounded-3xl p-6 border border-white/10 space-y-6">
+            
+            <div className="max-w-md space-y-2 text-xs font-semibold">
+              <label className="block text-slate-300">Target Career Path</label>
+              <select
+                className="w-full p-4 rounded-2xl border border-white/10 bg-white/5 text-white outline-none focus:border-[#22d3ee] transition-all cursor-pointer font-medium"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="" className="bg-[#0d101d]">Select Role</option>
+                <option className="bg-[#0d101d]">MERN Developer</option>
+                <option className="bg-[#0d101d]">Frontend Developer</option>
+                <option className="bg-[#0d101d]">Backend Developer</option>
+                <option className="bg-[#0d101d]">Software Engineer</option>
+                <option className="bg-[#0d101d]">AI Engineer</option>
+              </select>
             </div>
-          ) : (
-            <div className="mt-8 rounded-3xl border border-cyan-500/20 bg-[#081028] p-8">
-              <h2 className="text-2xl font-bold text-cyan-400 mb-6">
-                AI Analysis Result
-              </h2>
+
+            <button
+              onClick={handleAnalyze}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#22d3ee] to-[#a855f7] hover:shadow-[0_0_15px_rgba(34,211,238,0.25)] text-black font-bold text-xs hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+            >
+              Analyze Skills Gap
+            </button>
+
+            {error && (
+              <div className="p-4 rounded-3xl border border-red-500/20 bg-[#1f0d11] text-red-200 flex items-start gap-3 shadow-[0_0_20px_rgba(239,68,68,0.15)] backdrop-blur-md text-xs font-semibold">
+                <span className="text-xl">⚠️</span>
+                <div className="flex-1">
+                  <h3 className="font-bold text-red-400">Analysis Error</h3>
+                  <p className="mt-1 text-red-300/90">{error}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Results Block */}
+          {(analysis || loading) && (
+            <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 space-y-6">
+              <h2 className="text-xl font-bold text-white font-display">AI Analysis Findings</h2>
 
               {loading ? (
-                <div className="text-cyan-400 animate-pulse">
-                  🤖 AI is analyzing your profile...
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <span className="h-2 w-2 animate-bounce bg-[#22d3ee] rounded-full"></span>
+                  <p className="text-xs text-[#22d3ee] font-bold animate-pulse">Running semantic skill gap modeling...</p>
                 </div>
               ) : (
-                <div className="prose prose-invert max-w-none">
-                  <ReactMarkdown>
-                    {analysis ||
-                      "Upload resume and click Analyze to see results."}
-                  </ReactMarkdown>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  
+                  {/* Match Score */}
+                  <div className="glass-card p-6 rounded-2xl border border-white/5">
+                    <h3 className="text-sm font-bold text-[#22d3ee] font-display">Compatibility Match</h3>
+                    <div className="mt-6 flex items-baseline gap-1">
+                      <span className="text-5xl font-black font-display text-white">{analysis.matchScore}%</span>
+                    </div>
+                    <p className="text-[10px] text-[#94a3b8] font-bold uppercase tracking-wider mt-4">Profile match index</p>
+                  </div>
+
+                  {/* Current Skills */}
+                  <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-4">
+                    <h3 className="text-sm font-bold text-emerald-400 font-display">Current Skills Located</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {analysis.currentSkills?.map((skill: string, index: number) => (
+                        <span key={index} className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold text-emerald-400 uppercase tracking-wide">
+                          ✅ {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Missing Skills */}
+                  <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-4">
+                    <h3 className="text-sm font-bold text-rose-400 font-display">Missing Target Skills</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {analysis.missingSkills?.map((skill: string, index: number) => (
+                        <span key={index} className="rounded-lg bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 text-[10px] font-bold text-rose-400 uppercase tracking-wide">
+                          ❌ {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Strengths */}
+                  <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-4">
+                    <h3 className="text-sm font-bold text-cyan-400 font-display">Resume Strengths</h3>
+                    <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
+                      {analysis.strengths?.map((item: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="text-cyan-400 shrink-0">⭐</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Weaknesses */}
+                  <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-4">
+                    <h3 className="text-sm font-bold text-amber-400 font-display">ATS Weaknesses</h3>
+                    <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
+                      {analysis.weaknesses?.map((item: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="text-amber-400 shrink-0">⚠️</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Projects */}
+                  <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-4">
+                    <h3 className="text-sm font-bold text-[#a855f7] font-display">Suggested Projects</h3>
+                    <ul className="space-y-2.5 text-xs text-slate-300 font-medium">
+                      {analysis.projects?.map((project: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="text-[#a855f7] shrink-0">🚀</span>
+                          <span>{project}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
                 </div>
               )}
             </div>

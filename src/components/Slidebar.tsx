@@ -80,6 +80,34 @@ function Sidebar() {
         </svg>
       )
     },
+    { 
+      label: "AI Mock Interview", 
+      path: "/mock-interview",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+        </svg>
+      )
+    },
+    { 
+      label: "AI Outreach & Autofill", 
+      path: "/outreach",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 009 11.57m0-2.07c0-2.87-2.132-5.197-4.762-5.197H3.5m16.5 0a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM12 18a3.75 3.75 0 00.495-7.467M12 18a3.75 3.75 0 00-.495-7.467"></path>
+        </svg>
+      )
+    },
+    { 
+      label: "Settings", 
+      path: "/settings",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+      )
+    }
   ];
 
   // Helper to determine active state (handling exact paths and aliases)
@@ -95,7 +123,6 @@ function Sidebar() {
       {navItems.map((item) => {
         const active = isItemActive(item.path);
         return (
-          
           <div
             key={item.path}
             onClick={() => {
@@ -104,11 +131,11 @@ function Sidebar() {
             }}
             className={`flex items-center gap-3 cursor-pointer rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
               active
-                ? "bg-[#6366F1]/15 text-[#818CF8] border-l-4 border-[#6366F1] shadow-[inset_4px_0_12px_rgba(99,102,241,0.08)] font-semibold"
-                : "text-[#94A3B8] hover:bg-[#1E2235]/40 hover:text-white"
+                ? "bg-gradient-to-r from-[#22d3ee]/12 to-[#a855f7]/12 text-[#22d3ee] border-l-4 border-[#22d3ee] shadow-[inset_4px_0_12px_rgba(34,211,238,0.04)] font-semibold"
+                : "text-[#94a3b8] hover:bg-[#ffffff]/5 hover:text-[#ffffff] hover:translate-x-1"
             }`}
           >
-            <span className={`transition-colors duration-300 ${active ? "text-[#818CF8]" : "text-[#64748B]"}`}>
+            <span className={`transition-colors duration-300 ${active ? "text-[#22d3ee]" : "text-[#64748b] group-hover:text-[#94a3b8]"}`}>
               {item.icon}
             </span>
             <span>{item.label}</span>
@@ -123,7 +150,7 @@ function Sidebar() {
       {/* ── Mobile hamburger button ── */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-[#2A2F45] bg-[#0B0D19] text-white shadow-lg lg:hidden cursor-pointer"
+        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#07080d]/85 text-white shadow-lg backdrop-blur-md lg:hidden cursor-pointer hover:bg-[#07080d] transition-all"
         aria-label="Open menu"
       >
         <svg
@@ -132,7 +159,7 @@ function Sidebar() {
           viewBox="0 0 24 24"
           strokeWidth={2}
           stroke="currentColor"
-          className="h-5 w-5"
+          className="h-5 w-5 text-[#22d3ee]"
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
         </svg>
@@ -148,20 +175,20 @@ function Sidebar() {
 
       {/* ── Mobile drawer ── */}
       <div
-        className={`fixed left-0 top-0 z-[100] h-full w-[260px] border-r border-[#1E2235] bg-[#0B0D19] p-6 text-white shadow-2xl transition-transform duration-300 ease-in-out flex flex-col lg:hidden ${
+        className={`fixed left-0 top-0 z-[100] h-full w-[260px] border-r border-white/10 bg-[#07080d]/95 p-6 text-white shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-in-out flex flex-col lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#6366F1] to-[#818CF8] flex items-center justify-center font-bold text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#a855f7] to-[#22d3ee] flex items-center justify-center font-bold text-black shadow-[0_0_15px_rgba(34,211,238,0.4)]">
               L
             </div>
-            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-[#A5B4FC] bg-clip-text text-transparent">Linkup AI</h1>
+            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-[#a855f7] bg-clip-text text-transparent">Linkup AI</h1>
           </div>
           <button
             onClick={() => setMobileOpen(false)}
-            className="rounded-lg p-1 text-[#94A3B8] hover:text-white"
+            className="rounded-lg p-1 text-[#94a3b8] hover:text-white"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -173,20 +200,20 @@ function Sidebar() {
           <NavLinks />
         </div>
         
-        <div className="mt-auto pt-6 space-y-4 border-t border-[#1E2235]/40">
-          <div className="text-[10px] text-[#64748B] text-center">
+        <div className="mt-auto pt-6 space-y-4 border-t border-white/5">
+          <div className="text-[10px] text-[#64748b] text-center">
             © 2026 Linkup AI. All rights reserved.
           </div>
         </div>
       </div>
 
       {/* ── Desktop sidebar (always visible on lg+) ── */}
-      <div className="hidden h-screen w-[260px] shrink-0 border-r border-[#1E2235] bg-[#0B0D19] p-6 text-white lg:flex lg:flex-col">
+      <div className="hidden h-screen w-[260px] shrink-0 border-r border-white/10 bg-[#07080d]/40 backdrop-blur-xl p-6 text-white lg:flex lg:flex-col">
         <div className="mb-8 flex items-center gap-3 px-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#6366F1] to-[#818CF8] flex items-center justify-center font-extrabold text-white text-lg shadow-[0_0_15px_rgba(99,102,241,0.4)]">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#a855f7] to-[#22d3ee] flex items-center justify-center font-black text-black text-lg shadow-[0_0_15px_rgba(34,211,238,0.3)]">
             L
           </div>
-          <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-white to-[#E2E8F0] bg-clip-text text-transparent">
+          <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-white to-[#94a3b8] bg-clip-text text-transparent">
             Linkup AI
           </h1>
         </div>
@@ -195,8 +222,8 @@ function Sidebar() {
           <NavLinks />
         </div>
         
-        <div className="mt-auto pt-6 space-y-4 border-t border-[#1E2235]/40">
-          <div className="text-[10px] text-[#64748B] text-center font-medium">
+        <div className="mt-auto pt-6 space-y-4 border-t border-white/5">
+          <div className="text-[10px] text-[#64748b] text-center font-medium">
             © 2026 Linkup AI. All rights reserved.
           </div>
         </div>

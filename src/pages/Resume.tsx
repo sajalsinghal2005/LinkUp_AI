@@ -4,6 +4,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker?url";
 import { doc, setDoc } from "firebase/firestore";
 import Sidebar from "../components/Slidebar";
+import Navbar from "../components/Navbar";
 import { toast } from "react-hot-toast";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -138,83 +139,94 @@ function Resume({ setResumeText }: any) {
   };
 
   return (
-    <div className="flex min-h-screen bg-black pt-16 lg:pt-0">
+    <div className="flex min-h-screen bg-[#07080d] pt-16 lg:pt-0 w-full overflow-x-hidden font-sans">
       <Sidebar />
 
-      <div className="min-h-screen flex-1 bg-black p-4 text-white sm:p-6 lg:p-8">
-        <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl">
-          Resume Upload
-        </h1>
+      <div className="flex-1 w-full overflow-x-hidden flex flex-col relative z-10">
+        <Navbar userData={null} />
 
-        <p className="mt-3 text-slate-400">
-          Upload your professional resume.
-        </p>
-
-        <div className="mt-10 rounded-3xl border border-cyan-500/20 bg-[#081028] p-4 sm:p-6 lg:p-10">
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-cyan-500/30 p-8 text-center transition-all duration-300 hover:border-cyan-400 sm:p-16">
-            <div className="text-5xl sm:text-6xl">📄</div>
-            <h2 className="mt-5 text-xl font-bold sm:text-3xl">Upload Resume</h2>
-            <p className="mt-2 text-sm text-slate-400 sm:text-base">PDF only</p>
-            <input type="file" accept=".pdf" className="hidden" onChange={uploadResume} />
-          </label>
-
-          {loading && (
-            <p className="mt-6 text-cyan-400 animate-pulse text-center font-semibold">
-              Uploading & Analyzing Resume...
+        <div className="p-4 sm:p-6 lg:p-8 flex-1 space-y-8 animate-fade-in-up">
+          
+          <div>
+            <h1 className="text-3xl font-extrabold sm:text-4xl lg:text-5xl font-display tracking-tight text-white">
+              ATS Analyzer
+            </h1>
+            <p className="mt-2 text-sm text-[#94a3b8] font-medium">
+              Upload your PDF resume to analyze keywords, calculate compatibility, and get ATS improvement tips.
             </p>
-          )}
+          </div>
 
-          {resume && (
-            <div className="mt-8 rounded-3xl border border-cyan-500/20 bg-[#081028] p-4 sm:p-8">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold sm:text-4xl">AI Resume Analysis</h1>
-                  <p className="mt-2 text-sm text-slate-400 sm:text-base">AI generated insights</p>
-                </div>
-                <h1 className="text-5xl font-bold text-cyan-400 sm:text-6xl">{score}%</h1>
+          <div className="glass-panel rounded-3xl p-6 sm:p-10 border border-white/10 shadow-lg">
+            
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-[#22d3ee]/20 hover:border-[#22d3ee]/60 bg-white/5 p-8 text-center transition-all duration-300 sm:p-16 group">
+              <div className="text-5xl sm:text-6xl group-hover:scale-110 transition-all duration-300">📄</div>
+              <h2 className="mt-5 text-xl font-bold sm:text-2xl text-white font-display">Upload Resume Sheet</h2>
+              <p className="mt-2 text-xs text-[#94a3b8] font-medium">PDF formats only (ATS Compliant)</p>
+              <input type="file" accept=".pdf" className="hidden" onChange={uploadResume} />
+            </label>
+
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                <span className="h-2 w-2 animate-bounce bg-[#22d3ee] rounded-full"></span>
+                <p className="text-xs text-[#22d3ee] font-bold animate-pulse">Uploading & Analyzing Resume Metrics...</p>
               </div>
+            )}
 
-              <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="rounded-2xl bg-black/30 p-6">
-                  <p className="text-slate-400 text-sm">ATS Status</p>
-                  <h1 className="mt-2 text-2xl font-bold text-green-400 sm:text-3xl">Good</h1>
-                </div>
-
-                <div className="rounded-2xl bg-black/30 p-6">
-                  <p className="text-slate-400 text-sm">Recommended Role</p>
-                  <h1 className="mt-2 text-xl font-bold text-cyan-400 sm:text-2xl">{role}</h1>
-                </div>
-
-                <div className="rounded-2xl bg-black/30 p-6">
-                  <p className="text-slate-400 text-sm">Skills Found</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {skills.map((skill) => (
-                      <span key={skill} className="rounded-xl bg-cyan-500/20 px-3 py-1 text-xs text-cyan-300">
-                        {skill}
-                      </span>
-                    ))}
+            {resume && (
+              <div className="mt-8 rounded-3xl border border-white/10 bg-[#0d101d]/60 p-6 sm:p-8 space-y-6">
+                
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-5">
+                  <div>
+                    <h2 className="text-xl font-bold text-white font-display">AI Resume Analysis</h2>
+                    <p className="text-xs text-[#94a3b8] mt-1 font-medium">AI generated parsing insights</p>
+                  </div>
+                  <div className="text-5xl font-black text-[#22d3ee] font-display shadow-sm">
+                    {score}%
                   </div>
                 </div>
-              </div>
 
-              {tips.length > 0 && (
-                <div className="mt-8 rounded-3xl border border-cyan-500/20 bg-black/30 p-4 sm:p-8">
-                  <h2 className="text-2xl font-bold text-cyan-400 sm:text-3xl">AI Improvement Tips</h2>
-                  <div className="mt-6 space-y-4">
-                    {tips.map((tip, index) => (
-                      <div key={index} className="flex items-center gap-4 rounded-2xl bg-[#081028] p-4 text-slate-300">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400">
-                          ✨
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-5">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">ATS Status</p>
+                    <h3 className="mt-2 text-lg font-bold text-emerald-400">Excellent</h3>
+                  </div>
+
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-5">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Recommended Role</p>
+                    <h3 className="mt-2 text-lg font-bold text-[#22d3ee]">{role}</h3>
+                  </div>
+
+                  <div className="rounded-2xl bg-white/5 border border-white/5 p-5">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Keywords Located</p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {skills.map((skill) => (
+                        <span key={skill} className="rounded-lg bg-[#22d3ee]/10 border border-[#22d3ee]/20 px-2 py-1 text-[10px] font-bold uppercase text-[#22d3ee]">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {tips.length > 0 && (
+                  <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-8 space-y-5">
+                    <h3 className="text-lg font-bold text-[#a855f7] font-display">AI Improvement Recommendations</h3>
+                    <div className="space-y-3">
+                      {tips.map((tip, index) => (
+                        <div key={index} className="flex items-center gap-3.5 rounded-2xl bg-[#0d101d]/60 border border-white/5 p-4 text-slate-300">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#a855f7]/10 text-[#a855f7] text-xs">
+                            ✨
+                          </div>
+                          <p className="text-xs font-semibold text-slate-300">{tip}</p>
                         </div>
-                        <p className="text-sm sm:text-base">{tip}</p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
+          </div>
 
         </div>
       </div>

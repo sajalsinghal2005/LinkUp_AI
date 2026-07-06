@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { db, auth } from "../firebase/firebase";
 import { toast } from "react-hot-toast";
 import Sidebar from "../components/Slidebar";
+import { generateContentWithFallback } from "../utils/gemini";
 
 import axios from "axios";
 
@@ -37,6 +38,52 @@ function Feed() {
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
 
   const [userNames, setUserNames] = useState<{ [uid: string]: string }>({});
+
+  // Write with AI states
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiTone, setAiTone] = useState("Professional");
+  const [writing, setWriting] = useState(false);
+
+  const generateAiPost = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error("Please enter what you want to write about!");
+      return;
+    }
+
+    setWriting(true);
+    const toastId = toast.loading("🤖 AI is composing your post...");
+
+    const prompt = `
+You are an expert LinkedIn copywriter. Write a compelling, engaging post about:
+- Achievement/Update: ${aiPrompt}
+- Tone: ${aiTone}
+
+Rules:
+1. Make it professional, conversational, and structurally clean.
+2. Add 2-3 relevant hashtags at the bottom.
+3. Return ONLY the raw post content. No markdown headers, no quotes, no introductions, no comments.
+`;
+
+    try {
+      const response = await generateContentWithFallback({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        setText(response.text.trim());
+        setShowAiModal(false);
+        setAiPrompt("");
+        toast.success("Post drafted! Ready to share.", { id: toastId });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to compose post using AI.", { id: toastId });
+    } finally {
+      setWriting(false);
+    }
+  };
 
   const fetchPosts =
     async () => {
@@ -265,15 +312,26 @@ function Feed() {
             </div>
             
             <div className="mt-3 flex items-center justify-between pl-16">
-              <label className="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition hover:bg-white/5">
-                <span className="text-xl">🖼️</span>
-                <span className="text-sm font-semibold text-slate-300">Media</span>
-                <input
-                  type="file"
-                  onChange={(e: any) => setImage(e.target.files[0])}
-                  className="hidden"
-                />
-              </label>
+              <div className="flex items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition hover:bg-white/5">
+                  <span className="text-xl">🖼️</span>
+                  <span className="text-sm font-semibold text-slate-300">Media</span>
+                  <input
+                    type="file"
+                    onChange={(e: any) => setImage(e.target.files[0])}
+                    className="hidden"
+                  />
+                </label>
+
+                <button
+                  onClick={() => setShowAiModal(true)}
+                  className="flex items-center gap-1.5 rounded-lg p-2 text-sm font-semibold text-purple-400 hover:bg-white/5 transition cursor-pointer"
+                >
+                  <span>✨</span>
+                  <span>Write with AI</span>
+                </button>
+              </div>
+
               {image && (
                 <span className="text-xs text-cyan-400 truncate max-w-[150px]">
                   {image.name}
@@ -466,6 +524,59 @@ function Feed() {
           </div>
         </div>
       </div>
+
+      {/* Write with AI Modal Overlay */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="w-full max-w-lg rounded-3xl border border-purple-500/20 bg-[#0e0c25]/95 p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.15)]">
+            <div className="flex items-center justify-between border-b border-purple-500/10 pb-4 mb-4">
+              <h3 className="text-lg font-bold text-purple-300 flex items-center gap-2">
+                <span>✨</span> Write with AI
+              </h3>
+              <button
+                onClick={() => setShowAiModal(false)}
+                className="text-xl text-slate-400 hover:text-red-400 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">What is your post about?</label>
+                <textarea
+                  rows={4}
+                  placeholder="e.g. Completed my summer internship at SimonComputing as a software developer, built an API gateway with Node.js and React."
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  className="rounded-xl border border-slate-700 bg-black/40 p-3.5 text-sm text-slate-200 outline-none focus:border-purple-400 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Tone</label>
+                <select
+                  value={aiTone}
+                  onChange={(e) => setAiTone(e.target.value)}
+                  className="rounded-xl border border-slate-700 bg-black/40 p-3 text-sm text-slate-200 outline-none focus:border-purple-400 transition-all cursor-pointer"
+                >
+                  <option>Professional</option>
+                  <option>Excited & Celebratory</option>
+                  <option>Insightful & Thoughtful</option>
+                </select>
+              </div>
+
+              <button
+                onClick={generateAiPost}
+                disabled={writing}
+                className="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-600 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] text-white font-bold text-sm rounded-xl transition-all duration-300 disabled:bg-slate-700 disabled:cursor-not-allowed"
+              >
+                {writing ? "Writing draft..." : "✨ Generate Post Draft"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
