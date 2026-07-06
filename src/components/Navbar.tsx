@@ -19,6 +19,70 @@ function Navbar({ userData, search, onSearchChange }: Props) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(auth.currentUser);
 
+  // Notification States
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>(() => {
+    const local = localStorage.getItem("navbar_notifications");
+    if (local) return JSON.parse(local);
+    return [
+      {
+        id: "1",
+        type: "Application Updates",
+        title: "Google Application Accepted!",
+        message: "Your application for Google (Frontend Developer) has been updated to Accepted! check details on tracking page.",
+        timestamp: "2h ago",
+        read: false,
+        icon: "💼",
+        color: "text-emerald-400 bg-emerald-500/10",
+      },
+      {
+        id: "2",
+        type: "Interview Reminder",
+        title: "Mock Interview Prep",
+        message: "AI Simulator is ready for your Software Engineer mock interview round.",
+        timestamp: "5h ago",
+        read: false,
+        icon: "🎥",
+        color: "text-[#22d3ee] bg-[#22d3ee]/10",
+      },
+      {
+        id: "3",
+        type: "Resume Tips",
+        title: "ATS Optimization Guide",
+        message: "Tip: Highlight metrics (e.g. 'reduced latency by 20%') in your projects to pass ATS filters.",
+        timestamp: "1d ago",
+        read: true,
+        icon: "✨",
+        color: "text-purple-400 bg-purple-500/10",
+      },
+      {
+        id: "4",
+        type: "Daily AI Suggestion",
+        title: "Daily Skill Path Target",
+        message: "Gemini suggests completing a SQL or Backend database mock query check today.",
+        timestamp: "1d ago",
+        read: true,
+        icon: "🤖",
+        color: "text-amber-400 bg-amber-500/10",
+      },
+      {
+        id: "5",
+        type: "New Job Alerts",
+        title: "Netflix Vacancy Matching Profile",
+        message: "Alert: Netflix posted a Frontend React developer opening matching 90% of your keywords.",
+        timestamp: "2d ago",
+        read: true,
+        icon: "🔔",
+        color: "text-[#22d3ee] bg-[#22d3ee]/10",
+      },
+    ];
+  });
+
+  // Save notifications to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("navbar_notifications", JSON.stringify(notifications));
+  }, [notifications]);
+
   // Profile Form States
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -106,6 +170,34 @@ function Navbar({ userData, search, onSearchChange }: Props) {
     setSaving(false);
   };
 
+  // Toggle Read Status on a notification
+  const toggleNotificationRead = (id: string) => {
+    setNotifications(
+      notifications.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
+    );
+  };
+
+  // Dismiss / Delete a single notification
+  const deleteNotification = (id: string) => {
+    setNotifications(notifications.filter((n) => n.id !== id));
+    toast.success("Notification dismissed.");
+  };
+
+  // Mark all notifications as read
+  const markAllNotificationsRead = () => {
+    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+    toast.success("All marked as read.");
+  };
+
+  // Clear all notifications
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    toast.success("All cleared.");
+  };
+
+  // Compute unread count
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   // Compute fallback values for navbar display
   const name = userData?.fullName || currentUser?.displayName || currentUser?.email?.split("@")[0] || "Guest User";
   const displayCollege = userData?.college || currentUser?.email || "Account Active";
@@ -143,6 +235,7 @@ function Navbar({ userData, search, onSearchChange }: Props) {
 
         {/* Right Actions */}
         <div className="flex items-center gap-4 lg:gap-6">
+          
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
@@ -181,6 +274,139 @@ function Navbar({ userData, search, onSearchChange }: Props) {
               </svg>
             )}
           </button>
+
+          {/* ── Notification Center ── */}
+          <div className="relative">
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className="relative flex items-center justify-center w-10 h-10 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[#22d3ee]/40 text-white transition-all duration-300 active:scale-95 cursor-pointer shadow-lg"
+              title="Notifications"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.8}
+                stroke="currentColor"
+                className="h-5 w-5 text-[#22d3ee]"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+                />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#a855f7] text-[8px] font-black text-white shadow-sm ring-1 ring-white/15 animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown menu */}
+            {notificationsOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setNotificationsOpen(false)}
+                ></div>
+
+                <div className="absolute right-0 mt-3 w-80 sm:w-96 origin-top-right rounded-3xl border border-white/10 bg-[#0d101d] p-4 shadow-[0_15px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl z-50 animate-fade-in-up flex flex-col max-h-[480px]">
+                  
+                  {/* Dropdown Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white font-display">Notifications</span>
+                      {unreadCount > 0 && (
+                        <span className="rounded-full bg-[#22d3ee]/10 border border-[#22d3ee]/20 px-2 py-0.5 text-[9px] font-bold text-[#22d3ee]">
+                          {unreadCount} New
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[10px] font-bold">
+                      <button
+                        onClick={markAllNotificationsRead}
+                        className="text-[#22d3ee] hover:underline cursor-pointer"
+                        disabled={notifications.length === 0}
+                      >
+                        Read All
+                      </button>
+                      <span className="text-slate-700">|</span>
+                      <button
+                        onClick={clearAllNotifications}
+                        className="text-rose-400 hover:underline cursor-pointer"
+                        disabled={notifications.length === 0}
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* List Container */}
+                  <div className="flex-1 overflow-y-auto mt-3 pr-1 space-y-2 scrollbar-thin text-xs">
+                    {notifications.length === 0 ? (
+                      <div className="py-8 text-center text-slate-500 font-semibold space-y-1">
+                        <p className="text-lg">📭</p>
+                        <p>No new notifications at this time.</p>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className={`relative p-3 rounded-2xl border transition-all duration-300 flex items-start gap-3 ${
+                            notif.read
+                              ? "bg-white/2 border-white/5 hover:border-white/10 opacity-75"
+                              : "bg-[#22d3ee]/5 border-[#22d3ee]/15 hover:border-[#22d3ee]/35"
+                          }`}
+                        >
+                          {/* Left icon wrapper */}
+                          <div className={`h-8 w-8 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-sm ${notif.color || "text-[#22d3ee] bg-[#22d3ee]/10"}`}>
+                            {notif.icon || "🔔"}
+                          </div>
+
+                          {/* Message content */}
+                          <div className="flex-1 space-y-1 pr-4 cursor-pointer" onClick={() => toggleNotificationRead(notif.id)}>
+                            <div className="flex justify-between items-baseline">
+                              <span className="font-extrabold text-white text-[11px] font-sans truncate max-w-[140px] sm:max-w-[180px]">
+                                {notif.title}
+                              </span>
+                              <span className="text-[9px] text-[#94a3b8] font-bold shrink-0">
+                                {notif.timestamp}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-300 font-medium leading-relaxed leading-normal">
+                              {notif.message}
+                            </p>
+                            <span className="text-[8px] font-bold text-[#a855f7] uppercase tracking-wider block mt-1">
+                              {notif.type}
+                            </span>
+                          </div>
+
+                          {/* Close/Dismiss button */}
+                          <button
+                            onClick={() => deleteNotification(notif.id)}
+                            className="absolute right-2 top-2 text-slate-500 hover:text-white transition-all text-[9px] cursor-pointer"
+                            title="Dismiss notification"
+                          >
+                            ✕
+                          </button>
+
+                          {/* Unread Indicator dot */}
+                          {!notif.read && (
+                            <span className="absolute left-1.5 top-1.5 w-1.5 h-1.5 rounded-full bg-[#22d3ee] shadow-sm ring-1 ring-white/10" />
+                          )}
+
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Profile Section */}
           <div className="relative">
             <div
