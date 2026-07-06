@@ -40,25 +40,24 @@ function Feed() {
 
   const fetchPosts =
     async () => {
+      try {
+        const snapshot =
+          await getDocs(
+            collection(db, "Posts")
+          );
 
-      const snapshot =
-        await getDocs(
-          collection(db, "Posts")
-        );
+        const data =
+          snapshot.docs.map(
+            (doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })
+          );
 
-      const data =
-        snapshot.docs.map(
-          (doc) => ({
-
-            id: doc.id,
-
-            ...doc.data(),
-
-          })
-        );
-
-      setPosts(data.reverse());
-
+        setPosts(data.reverse());
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      }
     };
 
   useEffect(() => {
@@ -85,78 +84,62 @@ function Feed() {
 
   const uploadPost =
     async () => {
-
       if (!text && !image)
         return;
 
       setLoading(true);
 
-      let imageUrl = "";
+      try {
+        let imageUrl = "";
 
-      if (image) {
+        if (image) {
+          const formData =
+            new FormData();
 
-        const formData =
-          new FormData();
-
-        formData.append(
-          "file",
-          image
-        );
-
-        formData.append(
-
-          "upload_preset",
-
-          "resume_upload"
-
-
-        );
-
-        const response =
-          await axios.post(
-
-            "https://api.cloudinary.com/v1_1/daeazxq2r/image/upload",
-
-            formData
-
+          formData.append(
+            "file",
+            image
           );
 
-        imageUrl =
-          response.data.secure_url;
+          formData.append(
+            "upload_preset",
+            "resume_upload"
+          );
 
-      }
+          const response =
+            await axios.post(
+              "https://api.cloudinary.com/v1_1/daeazxq2r/image/upload",
+              formData
+            );
 
-      await addDoc(
-
-        collection(db, "Posts"),
-
-        {
-
-          text,
-
-          image:
-            imageUrl,
-
-          likes: [],
-
-          user: auth.currentUser?.displayName || auth.currentUser?.email || "Anonymous",
-
-          userId: auth.currentUser?.uid || "",
-
-          createdAt:
-            serverTimestamp(),
-
+          imageUrl =
+            response.data.secure_url;
         }
 
-      );
+        await addDoc(
+          collection(db, "Posts"),
+          {
+            text,
+            image:
+              imageUrl,
+            likes: [],
+            user: auth.currentUser?.displayName || auth.currentUser?.email || "Anonymous",
+            userId: auth.currentUser?.uid || "",
+            createdAt:
+              serverTimestamp(),
+          }
+        );
 
-      setText("");
-      setImage(null);
-
-      fetchPosts();
-
-      setLoading(false);
-
+        setText("");
+        setImage(null);
+        toast.success("Post uploaded successfully! 🎉");
+        await fetchPosts();
+      } catch (error) {
+        console.error("Error uploading post:", error);
+        toast.error("Failed to upload post. Check your database permissions or network.");
+      } finally {
+        setLoading(false);
+      }
     };
 
   const likePost = async (id: string, currentLikes: any) => {
@@ -166,27 +149,33 @@ function Feed() {
       return;
     }
 
-    let likesArray = Array.isArray(currentLikes) ? currentLikes : [];
+    try {
+      let likesArray = Array.isArray(currentLikes) ? currentLikes : [];
 
-    if (likesArray.includes(userEmail)) {
-      likesArray = likesArray.filter((email: string) => email !== userEmail);
-    } else {
-      likesArray = [...likesArray, userEmail];
+      if (likesArray.includes(userEmail)) {
+        likesArray = likesArray.filter((email: string) => email !== userEmail);
+      } else {
+        likesArray = [...likesArray, userEmail];
+      }
+
+      await updateDoc(doc(db, "Posts", id), {
+        likes: likesArray,
+      });
+
+      await fetchPosts();
+    } catch (error) {
+      console.error("Error liking post:", error);
+      toast.error("Failed to update like status.");
     }
-
-    await updateDoc(doc(db, "Posts", id), {
-      likes: likesArray,
-    });
-
-    fetchPosts();
   };
 
   const deletePost = async (id: string) => {
     try {
       await deleteDoc(doc(db, "Posts", id));
       toast.success("Post deleted successfully");
-      fetchPosts();
+      await fetchPosts();
     } catch (error) {
+      console.error("Error deleting post:", error);
       toast.error("Failed to delete post");
     }
   };
@@ -201,16 +190,21 @@ function Feed() {
     const text = commentInputs[id];
     if (!text || text.trim() === "") return;
 
-    let commentsArray = Array.isArray(currentComments) ? currentComments : [];
-    commentsArray = [...commentsArray, { userEmail, text, createdAt: new Date().toISOString() }];
+    try {
+      let commentsArray = Array.isArray(currentComments) ? currentComments : [];
+      commentsArray = [...commentsArray, { userEmail, text, createdAt: new Date().toISOString() }];
 
-    await updateDoc(doc(db, "Posts", id), {
-      comments: commentsArray,
-    });
+      await updateDoc(doc(db, "Posts", id), {
+        comments: commentsArray,
+      });
 
-    setCommentInputs(prev => ({ ...prev, [id]: "" }));
-    toast.success("Comment added!");
-    fetchPosts();
+      setCommentInputs(prev => ({ ...prev, [id]: "" }));
+      toast.success("Comment added!");
+      await fetchPosts();
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast.error("Failed to add comment.");
+    }
   };
 
   const repostPost = async (post: any) => {
@@ -220,21 +214,26 @@ function Feed() {
       return;
     }
 
-    await addDoc(collection(db, "Posts"), {
-      text: post.text,
-      image: post.image || "",
-      likes: [],
-      comments: [],
-      user: userEmail,
-      userId: auth.currentUser?.uid || "",
-      isRepost: true,
-      originalAuthor: post.user,
-      originalAuthorId: post.userId || "",
-      createdAt: serverTimestamp(),
-    });
+    try {
+      await addDoc(collection(db, "Posts"), {
+        text: post.text,
+        image: post.image || "",
+        likes: [],
+        comments: [],
+        user: userEmail,
+        userId: auth.currentUser?.uid || "",
+        isRepost: true,
+        originalAuthor: post.user,
+        originalAuthorId: post.userId || "",
+        createdAt: serverTimestamp(),
+      });
 
-    toast.success("Reposted successfully! 🔁");
-    fetchPosts();
+      toast.success("Reposted successfully! 🔁");
+      await fetchPosts();
+    } catch (error) {
+      console.error("Error reposting post:", error);
+      toast.error("Failed to repost.");
+    }
   };
 
   return (

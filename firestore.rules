@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User Profiles
+    match /users/{userId} {
+      // Any logged-in user can read profile info (needed for display names on Feed and Profile page)
+      allow read: if request.auth != null;
+      // Users can only create/update/edit their own profile
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Job Applications
+    match /applications/{applicationId} {
+      // Users can view and manage their own applications
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Saved Jobs
+    match /savedJobs/{jobId} {
+      // Users can view and manage their own saved jobs list
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Feed Posts (Case-sensitive collection "Posts")
+    match /Posts/{postId} {
+      // Any logged-in user can read the community posts feed
+      allow read: if request.auth != null;
+      // Users can create posts under their own UID
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Only the creator can modify or delete their post
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}

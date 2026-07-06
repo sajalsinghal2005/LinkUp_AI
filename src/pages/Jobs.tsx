@@ -158,29 +158,37 @@ Provide the output as a simple numbered list, one question per line, starting wi
   useEffect(() => {
 
     const fetchSavedJobs = async (uid: string) => {
-      const q = query(
-        collection(db, "savedJobs"),
-        where("userId", "==", uid)
-      );
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setSavedJobs(data);
+      try {
+        const q = query(
+          collection(db, "savedJobs"),
+          where("userId", "==", uid)
+        );
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setSavedJobs(data);
+      } catch (error) {
+        console.error("Error fetching saved jobs:", error);
+      }
     };
 
     const fetchAppliedJobs = async (uid: string) => {
-      const q = query(
-        collection(db, "applications"),
-        where("userId", "==", uid)
-      );
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setAppliedJobs(data);
+      try {
+        const q = query(
+          collection(db, "applications"),
+          where("userId", "==", uid)
+        );
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setAppliedJobs(data);
+      } catch (error) {
+        console.error("Error fetching applied jobs:", error);
+      }
     };
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -491,33 +499,44 @@ Provide the output as a simple numbered list, one question per line, starting wi
 
                       {/* Top */}
 
-                      <div className="flex items-start justify-between">
-                    
-                        <div>
-
-                          <h2 className="text-4xl font-bold text-cyan-400">
-
-                            {job.employer_name}
-
-                          </h2>
-
-                          <p className="mt-2 text-xl text-white">
-
-                            {job.job_title}
-
-                          </p>
-
+                       <div className="flex items-start justify-between gap-4">
+                     
+                         <div className="flex-1 min-w-0">
+ 
+                           <h2 className="text-3xl sm:text-4xl font-bold text-cyan-400 break-words">
+ 
+                             {job.employer_name}
+ 
+                           </h2>
+ 
+                           <p className="mt-2 text-lg sm:text-xl text-white break-words">
+ 
+                             {job.job_title}
+ 
+                           </p>
+ 
+                         </div>
+ 
+                         <div className="relative h-16 w-16 flex-shrink-0">
+                          {job.employer_logo ? (
+                            <img
+                              src={job.employer_logo}
+                              alt="logo"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextElementSibling;
+                                if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                              }}
+                              className="h-16 w-16 rounded-2xl bg-white p-2 shadow-lg object-contain"
+                            />
+                          ) : null}
+                          <div
+                            style={{ display: job.employer_logo ? 'none' : 'flex' }}
+                            className="absolute inset-0 h-16 w-16 rounded-2xl bg-gradient-to-tr from-[#6366F1] to-[#818CF8] flex items-center justify-center font-bold text-white text-xl shadow-lg"
+                          >
+                            {(job.employer_name || "C").charAt(0).toUpperCase()}
+                          </div>
                         </div>
-
-                        <img
-
-                          src={job.employer_logo}
-
-                          alt="logo"
-
-                          className="h-16 w-16 rounded-2xl bg-white p-2 shadow-lg"
-
-                        />
 
                       </div>
 
@@ -660,49 +679,57 @@ Provide the output as a simple numbered list, one question per line, starting wi
 
                             }
 
-                            const docRef =
-                              await addDoc(
-                                collection(
-                                  db,
-                                  "applications"
-                                ),
+                            try {
+                              const docRef =
+                                await addDoc(
+                                  collection(
+                                    db,
+                                    "applications"
+                                  ),
+                                  {
+                                    userId: auth.currentUser?.uid || "",
+                                    company: jobCompany,
+                                    role: job.job_title || job.Role || job.role || "Software Engineer",
+                                    status: "Pending",
+                                    appliedAt: new Date(),
+                                    link:
+                                      job.job_apply_link ||
+                                      "",
+                                  }
+                                );
+
+                              emailjs.send(
+                                import.meta.env.VITE_EMAILJS_SERVICE_ID,
+                                import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
                                 {
-                                  userId: auth.currentUser?.uid || "",
                                   company: jobCompany,
-                                  role: job.job_title || job.Role || job.role || "Software Engineer",
-                                  status: "Pending",
-                                  appliedAt: new Date(),
-                                  link:
-                                    job.job_apply_link ||
-                                    "",
-                                }
+                                  role: job.job_title || job.Role || "Software Engineer",
+                                },
+                                import.meta.env.VITE_EMAILJS_PUBLIC_KEY
                               );
 
-                            emailjs.send(
-                              import.meta.env.VITE_EMAILJS_SERVICE_ID,
-                              import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-                              {
-                                company: jobCompany,
-                                role: job.job_title || job.Role || "Software Engineer",
-                              },
-                              import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-                            );
+                              setAppliedJobs([
+                                ...appliedJobs,
+                                {
+                                  id: docRef.id,
+                                  company: jobCompany,
+                                },
+                              ]);
 
-                            setAppliedJobs([
-                              ...appliedJobs,
-                              {
-                                id: docRef.id,
-                                company: jobCompany,
-                              },
-                            ]);
+                              setSuccessMessage(
+                                `Applied to ${jobCompany}`
+                              );
 
-                            setSuccessMessage(
-                              `Applied to ${jobCompany}`
-                            );
-
-                            setTimeout(() => {
-                              setSuccessMessage("");
-                            }, 3000);
+                              setTimeout(() => {
+                                setSuccessMessage("");
+                              }, 3000);
+                            } catch (error) {
+                              console.error("Error applying to job:", error);
+                              setSuccessMessage("Failed to submit application. Check permissions.");
+                              setTimeout(() => {
+                                setSuccessMessage("");
+                              }, 3000);
+                            }
 
                           }}
                           className={`rounded-2xl px-5 py-2.5 font-bold transition-all duration-300
@@ -747,51 +774,55 @@ Provide the output as a simple numbered list, one question per line, starting wi
                                   saved.company === jobCompanySave
                               );
 
-                            if (alreadySaved) {
+                            try {
+                              if (alreadySaved) {
 
-                              await deleteDoc(
-                                doc(
-                                  db,
-                                  "savedJobs",
-                                  alreadySaved.id
-                                )
-                              );
-
-                              setSavedJobs(
-                                savedJobs.filter(
-                                  (
-                                    saved: any
-                                  ) =>
-                                    saved.id !==
+                                await deleteDoc(
+                                  doc(
+                                    db,
+                                    "savedJobs",
                                     alreadySaved.id
-                                )
-                              );
+                                  )
+                                );
 
-                              return;
+                                setSavedJobs(
+                                  savedJobs.filter(
+                                    (
+                                      saved: any
+                                    ) =>
+                                      saved.id !==
+                                      alreadySaved.id
+                                  )
+                                );
 
-                            }
+                                return;
 
-                            const docRef =
-                              await addDoc(
-                                collection(
-                                  db,
-                                  "savedJobs"
-                                ),
+                              }
+
+                              const docRef =
+                                await addDoc(
+                                  collection(
+                                    db,
+                                    "savedJobs"
+                                  ),
+                                  {
+                                    userId: auth.currentUser?.uid || "",
+                                    company: jobCompanySave,
+                                    role:
+                                      job.job_title || job.Role || job.role || "Software Engineer",
+                                  }
+                                );
+
+                              setSavedJobs([
+                                ...savedJobs,
                                 {
-                                  userId: auth.currentUser?.uid || "",
+                                  id: docRef.id,
                                   company: jobCompanySave,
-                                  role:
-                                    job.job_title || job.Role || job.role || "Software Engineer",
-                                }
-                              );
-
-                            setSavedJobs([
-                              ...savedJobs,
-                              {
-                                id: docRef.id,
-                                company: jobCompanySave,
-                              },
-                            ]);
+                                },
+                              ]);
+                            } catch (error) {
+                              console.error("Error saving/removing job:", error);
+                            }
 
                           }}
                           className={`rounded-2xl px-6 py-3 font-semibold transition-all duration-300

@@ -23,24 +23,26 @@ function SavedJobs() {
 
   const fetchSavedJobs =
     async (uid: string) => {
-
-      const q = query(
-        collection(db, "savedJobs"),
-        where("userId", "==", uid)
-      );
-
-      const querySnapshot = await getDocs(q);
-
-      const data =
-        querySnapshot.docs.map(
-          (doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })
+      try {
+        const q = query(
+          collection(db, "savedJobs"),
+          where("userId", "==", uid)
         );
 
-      setSavedJobs(data);
+        const querySnapshot = await getDocs(q);
 
+        const data =
+          querySnapshot.docs.map(
+            (doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })
+          );
+
+        setSavedJobs(data);
+      } catch (error) {
+        console.error("Error fetching saved jobs:", error);
+      }
     };
 
   useEffect(() => {
@@ -59,18 +61,20 @@ function SavedJobs() {
 
   const removeJob =
     async (id: string) => {
+      try {
+        await deleteDoc(
+          doc(db, "savedJobs", id)
+        );
 
-      await deleteDoc(
-        doc(db, "savedJobs", id)
-      );
-
-      setSavedJobs(
-        savedJobs.filter(
-          (job) =>
-            job.id !== id
-        )
-      );
-
+        setSavedJobs(
+          savedJobs.filter(
+            (job) =>
+              job.id !== id
+          )
+        );
+      } catch (error) {
+        console.error("Error removing job:", error);
+      }
     };
 
   return (

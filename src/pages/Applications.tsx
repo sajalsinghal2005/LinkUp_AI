@@ -40,70 +40,79 @@ function Applications() {
   }, []);
 
   const fetchApplications = async (uid: string) => {
+    try {
+      const querySnapshot = await getDocs(
+        query(collection(db, "applications"), where("userId", "==", uid))
+      );
 
-    const querySnapshot = await getDocs(
-      query(collection(db, "applications"), where("userId", "==", uid))
-    );
+      const applicationsData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-    const applicationsData = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    setApplications(applicationsData);
-
+      setApplications(applicationsData);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+    }
   };
 
   const withdrawApplication = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "applications", id));
 
-    await deleteDoc(doc(db, "applications", id));
+      setApplications(
+        applications.filter(
+          (application) => application.id !== id
+        )
+      );
 
-    setApplications(
-      applications.filter(
-        (application) => application.id !== id
-      )
-    );
-
-    setSuccessMessage("Application Withdrawn Successfully");
-setTimeout(() => {
-
-  setSuccessMessage("");
-
-}, 2500);
+      setSuccessMessage("Application Withdrawn Successfully");
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 2500);
+    } catch (error) {
+      console.error("Error withdrawing application:", error);
+      setErrorMessage("Failed to withdraw application.");
+      setTimeout(() => {
+        setErrorMessage("");
+      }, 2500);
+    }
   };
 
   const changeStatus = async (
     id: string,
     currentStatus: string
   ) => {
-
     let newStatus = "Pending";
 
     if (currentStatus === "Pending") {
-
       newStatus = "Accepted";
-
     } else if (currentStatus === "Accepted") {
-
       newStatus = "Rejected";
-
     }
 
-    await updateDoc(doc(db, "applications", id), {
-      status: newStatus,
-    });
+    try {
+      await updateDoc(doc(db, "applications", id), {
+        status: newStatus,
+      });
 
-    setApplications(
-      applications.map((application) =>
-        application.id === id
-          ? {
-              ...application,
-              status: newStatus,
-            }
-          : application
-      )
-    );
-
+      setApplications(
+        applications.map((application) =>
+          application.id === id
+            ? {
+                ...application,
+                status: newStatus,
+              }
+            : application
+        )
+      );
+    } catch (error) {
+      console.error("Error changing application status:", error);
+      setErrorMessage("Failed to change status.");
+      setTimeout(() => {
+        setErrorMessage("");
+      }, 2500);
+    }
   };
 
   const filteredApplications = applications.filter(
