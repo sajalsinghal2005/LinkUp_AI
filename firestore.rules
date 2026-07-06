@@ -33,5 +33,11 @@ service cloud.firestore {
       // Only the creator can modify or delete their post
       allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
+
+    // Interview History
+    match /interviews/{interviewId} {
+      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
   }
 }
