@@ -89,7 +89,7 @@ function Login() {
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-[#07080d] text-white font-sans">
-      
+
       {/* Ambient background glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#a855f7]/8 blur-[130px] pointer-events-none z-0"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#22d3ee]/8 blur-[130px] pointer-events-none z-0"></div>
@@ -98,9 +98,9 @@ function Login() {
       <div className="hidden lg:flex w-1/2 flex-col justify-center px-16 xl:px-24 relative z-10 animate-fade-in-up">
         <div className="max-w-2xl">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#a855f7]/30 bg-[#a855f7]/10 px-4 py-1.5 text-xs text-[#d8b4fe] font-semibold tracking-wide">
-            ✨ LINKUP AI COPILOT
+            ✨ LINKUP AI
           </div>
-          
+
           <h1 className="mb-6 text-5xl xl:text-6xl font-black leading-tight tracking-tight text-white font-display">
             Your AI Copilot <br />
             for Landing Dream Jobs on
@@ -164,7 +164,7 @@ function Login() {
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
-            
+
             {isRegister && (
               <div className="space-y-4 animate-fade-in-up">
                 <input
